@@ -101,8 +101,8 @@ public:
 		return x_*v.x() + y_*v.y() + z_*v.z();
 	}
 
-	/// Cross product with anotehr Vector.
-	Vector operator*(const Vector &v) const {
+	/// Cross product with another Vector.
+	Vector operator^(const Vector &v) const {
 		return Vector(y_*v.z()-z_*v.y(), z_*v.x()-x_*v.z(), x_*v.y()-y_*v.x());
 	}
 
@@ -130,6 +130,16 @@ public:
 		origin_{origin}, direction_{direction}
 	{
 		direction_.Normalize(); // The direction is directly normalized.
+	}
+
+	/// Returns the source of the Ray.
+	const Vector& Origin() const {
+		return origin_;
+	}
+
+	/// Returns the normalized direction of the Ray.
+	const Vector& Direction() const {
+		return direction_;
 	}
 };
 
@@ -192,6 +202,18 @@ public:
 			return Intersection(Distance());
 		} else {
 			return Intersection(std::min(Distance(), inter.Distance()));
+		}
+	}
+
+	/// Compares two Intersections with respect to their distance to the origin
+	/// point of a Ray.
+	bool operator<(const Intersection &inter) const {
+		if (IsEmpty()) {
+			return false;
+		} else if (inter.IsEmpty()) {
+			return true;
+		} else {
+			return Distance() < inter.Distance();
 		}
 	}
 };

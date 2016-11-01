@@ -1,4 +1,4 @@
-#include "object.hpp"
+#include "scene.hpp"
 
 
 int main(int argc, char **argv) {
