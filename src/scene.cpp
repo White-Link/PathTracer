@@ -30,7 +30,7 @@ Vector Scene::GetColor(const Ray &r) const {
 		direction_light.Normalize();
 		double intensity =
 			std::max(direction_light | o.Normal(intersection_point), 0.)
-			* lights_.at(0).Intensity() / dd;
+			* lights_.at(0).Intensity() / (M_PI * dd);
 		return Vector(intensity, intensity, intensity);
 	}
 }
