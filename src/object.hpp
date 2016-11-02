@@ -1,13 +1,14 @@
 /**
  * \file object.hpp
- * \brief Defines the objects classes that can be used in a scene (Sphere) and
- *        their abstract class Object.
+ * \brief Defines the objects classes that can be used in a scene (Sphere,
+ *        Plane) and their abstract class Object.
  */
 
 #pragma once
 
 #include <memory>
 #include "utils.hpp"
+#include "material.hpp"
 
 
 /**
@@ -48,8 +49,31 @@ public:
 
 
 /**
+ * \class Plane
+ * \brief Plane object, defined by a point and a normal.
+ */
+class Plane : public RawObject {
+private:
+	const Vector point_;  //!< Point of the Plane.
+	const Vector normal_; //!< Normal of the Plane.
+
+public:
+	/// Creates a Plane with given normal and a point.
+	Plane(const Vector &point, const Vector &normal) :
+		point_{point}, normal_{normal}
+	{
+	}
+
+	Intersection Intersect(const Ray &r) const;
+
+	Vector Normal(const Vector &p) const;
+};
+
+
+/**
  * \class Object
- * \brief Class representing the container of a RawObject.
+ * \brief Class representing the container of a RawObject, and assigning to it a
+ *        Material.
  *
  * Object contains an unknown RawObject and acts as an interface for usual
  * methods that can be called on objects, like Intersect.
@@ -59,15 +83,29 @@ private:
 	/// The RowObject is stored using a pointer to forget its actual type.
 	std::shared_ptr<RawObject> raw_object_;
 
+	const Material material_; /// Material of the object.
+
 public:
 	/// Creates an empty / invisible object.
 	Object() {
 		raw_object_.reset(new Sphere(Sphere(-1, Vector(0, 0, 0))));
 	}
 
-	/// Creates an object from a Sphere.
-	Object(const Sphere &s) {
+	/// Creates an object from a Sphere and a Material.
+	Object(const Sphere &s, const Material &material=Material())
+		: material_{material} {
 		raw_object_.reset(new Sphere(s));
+	}
+
+	/// Creates an object from a Plane and a Material.
+	Object(const Plane &plane, const Material &material=Material())
+		: material_{material} {
+		raw_object_.reset(new Plane(plane));
+	}
+
+	/// Outputs the Material of the object.
+	const Material& ObjectMaterial() const {
+		return material_;
 	}
 
 	/// Intersection primitive of the contained object.

@@ -150,7 +150,7 @@ public:
 	 * that is "before" the intersection.
 	 */
 	Vector operator()(double t) const {
-		return origin_ + (t-0.0000001)*direction_;
+		return origin_ + (t*0.999999)*direction_;
 	}
 };
 

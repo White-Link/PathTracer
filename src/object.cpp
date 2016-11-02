@@ -35,3 +35,27 @@ Vector Sphere::Normal(const Vector &p) const {
 		return direction;
 	}
 }
+
+
+Intersection Plane::Intersect(const Ray &r) const {
+	const Vector &direction = r.Direction();
+	double dot_prod = (direction | normal_);
+	if (dot_prod == 0) {
+		// The ray and the plane are parallel
+		return Intersection();
+	} else {
+		return Intersection(-((r.Origin()-point_) | normal_) / dot_prod);
+	}
+}
+
+
+Vector Plane::Normal(const Vector &p) const {
+	Vector normal = normal_;
+	normal.Normalize();
+	if (((p - point_) | normal) < 0) {
+		return -normal;
+	} else {
+		return normal;
+	}
+	return normal;
+}
