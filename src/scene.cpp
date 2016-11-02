@@ -17,26 +17,40 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 
 
 Vector Scene::GetColor(const Ray &r) const {
+	// Check first the intersectio with the objects of the scene
 	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
 	Intersection inter = query.first;
 	const Object &o = query.second;
 	if (inter.IsEmpty()) {
+		// No intersection
 		return Vector(0, 0, 0);
 	} else {
 		// TODO: check when #lights != 1
+		// Light intensity computation
 		Vector intersection_point = r(inter.Distance());
 		Vector direction_light = lights_.at(0).Source() - intersection_point;
-		double dd = direction_light.NormSquared();
-		direction_light.Normalize();
-		double intensity =
-			std::max(direction_light | o.Normal(intersection_point), 0.)
-			* lights_.at(0).Intensity() / (M_PI * dd);
-		const Vector& object_color = o.ObjectMaterial().Color();
-		return Vector(
-			intensity*object_color.x(),
-			intensity*object_color.y(),
-			intensity*object_color.z()
-		);
+		// Check if an object blocks the light
+		// Throw a ray to the light
+		Ray to_light(intersection_point, direction_light);
+		Intersection inter_light = objects_->Intersect(to_light).first;
+		double d = inter_light.Distance();
+		// If an object is between the light and the intersection point, then
+		// the color is dark
+		if (!inter_light.IsEmpty() && d*d < direction_light.NormSquared()) {
+			return Vector(0, 0, 0);
+		} else {
+			double dd = direction_light.NormSquared();
+			double intensity =
+				std::max(to_light.Direction()|o.Normal(intersection_point), 0.)
+				* lights_.at(0).Intensity() / (M_PI * dd);
+			// The color of the object is added
+			const Vector& object_color = o.ObjectMaterial().Color();
+			return Vector(
+				intensity*object_color.x(),
+				intensity*object_color.y(),
+				intensity*object_color.z()
+			);
+		}
 	}
 }
 
