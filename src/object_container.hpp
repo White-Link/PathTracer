@@ -36,8 +36,9 @@ private:
 public:
 	/// Constructs an ObjectVector from an iterable containing objects.
 	template <class InputIterator>
-	ObjectVector(InputIterator first, InputIterator last) {
-		objects(first, last);
+	ObjectVector(InputIterator first, InputIterator last)
+		: objects_(first, last)
+	{
 	}
 
 	std::pair<Intersection, const Object&> Intersect(const Ray &r) const;

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "object.hpp"
+#include "object_container.hpp"
 
 
 /**
@@ -34,16 +35,16 @@ public:
 	{
 		direction_.Normalize();
 		up_.Normalize();
-		right_ = direction_^up_;
+		right_ = up_^direction_;
 	}
 
 	/// Outputs the height of the final image.
-	int Height() const {
+	size_t Height() const {
 		return height_;
 	}
 
 	/// Outputs the width of the final image.
-	int Width() const {
+	size_t Width() const {
 		return width_;
 	}
 
@@ -55,10 +56,40 @@ public:
 	 * \param di Perturbation of the height coordinate of the pixel.
 	 * \param dj Perturbation of the width coordinate of the pixel.
 	 */
-	Ray Launch(int i, int j, double di=0, double dj=0);
+	Ray Launch(size_t i, size_t j, double di=0, double dj=0);
 };
 
 
 class Scene {
+private:
+	Camera camera_;
+	std::shared_ptr<ObjectContainer> objects_;
+	std::vector<unsigned char> image_;
 
+public:
+	/// Constructs a Scene from a Camera and an ObjectVector
+	Scene(const Camera &camera, const ObjectVector &objects) : camera_{camera}
+	{
+		objects_.reset(new ObjectVector(objects));
+		image_.assign(3*camera.Height()*camera.Width(), 0);
+	}
+
+	/// Outputs the current camera.
+	const Camera& GetCamera() const {
+		return camera_;
+	}
+
+	/// Outputs the height of the final image.
+	size_t Height() const {
+		return camera_.Height();
+	}
+
+	/// Outputs the width of the final image.
+	size_t Width() const {
+		return camera_.Width();
+	}
+
+	void Render();
+
+	void Save(const std::string &filename) const;
 };

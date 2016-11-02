@@ -171,7 +171,7 @@ public:
 	 *
 	 * If the input paramter is non-positive, then the Intersection is empty.
 	 */
-	Intersection(double t) : exists_{t > 0}, t_{std::min(t, 0.)}
+	Intersection(double t) : exists_{t > 0}, t_{std::max(t, 0.)}
 	{
 	}
 

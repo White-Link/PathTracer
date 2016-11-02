@@ -46,8 +46,15 @@ set(
 )
 add_executable(
 	path_tracer
-    ${SOURCES}
+	${SOURCES}
+	${X11_LIB_DIRS}
 )
+if (NOT WIN32)
+	target_link_libraries(
+		path_tracer
+		X11
+	)
+endif()
 
 
 # Doxygen doc
