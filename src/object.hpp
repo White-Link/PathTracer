@@ -19,6 +19,9 @@ class RawObject {
 public:
 	/// Computes the Intersection point between the object and the input Ray.
 	virtual Intersection Intersect(const Ray &r) const = 0;
+
+	/// Computes the normal unitary vector to the object at the given point.
+	virtual Vector Normal(const Vector &p) const = 0;
 };
 
 
@@ -39,6 +42,8 @@ public:
 	}
 
 	Intersection Intersect(const Ray &r) const;
+
+	Vector Normal(const Vector &p) const;
 };
 
 
@@ -68,5 +73,10 @@ public:
 	/// Intersection primitive of the contained object.
 	Intersection Intersect(const Ray &r) const {
 		return raw_object_->Intersect(r);
+	}
+
+	/// Computes the normal unitary vector to the object at the given point.
+	Vector Normal(const Vector &p) const {
+		return raw_object_->Normal(p);
 	}
 };

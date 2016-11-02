@@ -15,9 +15,23 @@ Intersection Sphere::Intersect(const Ray &r) const {
 	if (delta < 0) {
 		return Intersection();
 	} else {
-		Intersection i1 = Intersection((-dot_prod + sqrt(delta))/2);
-		Intersection i2 = Intersection((-dot_prod - sqrt(delta))/2);
+		Intersection i1 = Intersection((-2*dot_prod + sqrt(delta))/2);
+		Intersection i2 = Intersection((-2*dot_prod - sqrt(delta))/2);
 		// The closest positive intersection is chosen
 		return i1 | i2;
+	}
+}
+
+
+Vector Sphere::Normal(const Vector &p) const {
+	Vector direction = p - center_;
+	double distance_to_center_squared = direction.NormSquared();
+	// Gives an "in" normal (directed towards the center) if v is in the sphere,
+	// an "out" normal otherwise.
+	direction.Normalize();
+	if (distance_to_center_squared < radius_*radius_) {
+		return -direction;
+	} else {
+		return direction;
 	}
 }

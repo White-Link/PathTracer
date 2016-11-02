@@ -141,6 +141,17 @@ public:
 	const Vector& Direction() const {
 		return direction_;
 	}
+
+	/**
+	 * \fn Vector operator()(double t) const
+	 * \brief Gives the point on the Ray at a given distance of the origin.
+	 *
+	 * A small espilon is substracted from the given distance to get a point
+	 * that is "before" the intersection.
+	 */
+	Vector operator()(double t) const {
+		return origin_ + (t-0.0000001)*direction_;
+	}
 };
 
 

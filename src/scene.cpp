@@ -16,17 +16,38 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 }
 
 
+Vector Scene::GetColor(const Ray &r) const {
+	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
+	Intersection inter = query.first;
+	const Object &o = query.second;
+	if (inter.IsEmpty()) {
+		return Vector(0, 0, 0);
+	} else {
+		// TODO: check when #lights != 1
+		Vector intersection_point = r(inter.Distance());
+		Vector direction_light = lights_.at(0).Source() - intersection_point;
+		double dd = direction_light.NormSquared();
+		direction_light.Normalize();
+		double intensity =
+			std::max(direction_light | o.Normal(intersection_point), 0.)
+			* lights_.at(0).Intensity() / dd;
+		return Vector(intensity, intensity, intensity);
+	}
+}
+
+
 void Scene::Render() {
 	#pragma omp parallel for schedule(dynamic, 1)
-	for (size_t i=0; i<Height(); i++){
+	for (size_t i=0; i<Height(); i++) {
 		for (size_t j=0; j<Width(); j++) {
 			Ray r = camera_.Launch(i, j);
-			Intersection inter = objects_->Intersect(r).first;
-			if (!inter.IsEmpty()) {
-				image_.at((Height()-i-1)*Width()+j) = 255;
-				image_.at((Height()-i-1)*Width()+j + Width()*Height()) = 255;
-				image_.at((Height()-i-1)*Width()+j + 2*Width()*Height()) = 255;
-			}
+			Vector color_pixel = GetColor(r);
+			image_.at((Height()-i-1)*Width()+j)
+				= std::min(255, (int)(255*color_pixel.x()));
+			image_.at((Height()-i-1)*Width()+j + Width()*Height())
+				= std::min(255, (int)(255*color_pixel.y()));
+			image_.at((Height()-i-1)*Width()+j + 2*Width()*Height())
+				= std::min(255, (int)(255*color_pixel.z()));
 		}
 	}
 }

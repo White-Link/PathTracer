@@ -7,6 +7,7 @@ int main(int argc, char **argv) {
 	ObjectVector objects(objects_v.begin(), objects_v.end());
 	Camera camera(Vector(0,0,0), Vector(1,0,0), Vector(0,0,1), 60*M_PI/180, 500, 500);
 	Scene scene(camera, objects);
+	scene.AddLight(Light(Vector(0, 0, 4), 10));
 	scene.Render();
 	scene.Save("test.bmp");
 	return 0;
