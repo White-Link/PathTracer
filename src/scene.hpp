@@ -96,7 +96,7 @@ public:
 class Scene {
 private:
 	Camera camera_; //!< Camera from which the scene is seen.
-	std::shared_ptr<ObjectContainer> objects_; //!< Container of all objects.
+	std::unique_ptr<ObjectContainer> objects_; //!< Container of all objects.
 	std::vector<unsigned char> image_; //!< The rendered scene is stored there.
 	std::vector<Light> lights_; //!< Stores all the light sources in the scene.
 
@@ -104,16 +104,20 @@ private:
 	 * \fn Vector GetColor(const Ray &r) const
 	 * \brief Computes the color (R,G,B) of the input Ray, with R, G and B
 	 *        between 0 and 1.
+	 * \param nb_recursions Limits the depth of the recursive calls tree.
 	 *
 	 * If a component of the color vector goes over 1, it will be counted as 1.
 	 */
-	Vector GetColor(const Ray &r) const;
+	Vector GetColor(const Ray &r, unsigned int nb_recursions) const;
+
+	/// Computes the intensity of the light at a given point, given a normal to
+	/// this point.
+	double LightIntensity(const Vector &p, const Vector &normal) const;
 
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector
-	Scene(const Camera &camera, const ObjectVector &objects) : camera_{camera}
-	{
-		objects_.reset(new ObjectVector(objects));
+	Scene(const Camera &camera, const ObjectVector &objects) :
+		camera_{camera}, objects_{new ObjectVector(objects)} {
 		image_.assign(3*camera.Height()*camera.Width(), 0);
 	}
 
@@ -137,8 +141,12 @@ public:
 		return camera_.Width();
 	}
 
-	/// Renders the current scene and stores it in image_.
-	void Render();
+	/**
+	 * \fn void Render(unsigned int nb_recursions)
+	 * \brief Renders the current scene and stores it in image_.
+	 * \param nb_recursions Limits the depth of the recursive calls tree.
+	 */
+	void Render(unsigned int nb_recursions);
 
 	/// Save the rendered scene into the given filename.
 	void Save(const std::string &file_name) const;

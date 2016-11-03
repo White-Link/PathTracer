@@ -80,7 +80,7 @@ public:
  */
 class Object {
 private:
-	/// The RowObject is stored using a pointer to forget its actual type.
+	/// The RawObject is stored using a pointer to forget its actual type.
 	std::shared_ptr<RawObject> raw_object_;
 
 	const Material material_; /// Material of the object.
@@ -93,14 +93,14 @@ public:
 
 	/// Creates an object from a Sphere and a Material.
 	Object(const Sphere &s, const Material &material=Material())
-		: material_{material} {
-		raw_object_.reset(new Sphere(s));
+		: material_{material}, raw_object_{new Sphere(s)}
+	{
 	}
 
 	/// Creates an object from a Plane and a Material.
 	Object(const Plane &plane, const Material &material=Material())
-		: material_{material} {
-		raw_object_.reset(new Plane(plane));
+		: material_{material}, raw_object_{new Plane(plane)}
+	{
 	}
 
 	/// Outputs the Material of the object.
