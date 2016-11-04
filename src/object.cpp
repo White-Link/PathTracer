@@ -15,8 +15,8 @@ Intersection Sphere::Intersect(const Ray &r) const {
 	if (delta < 0) {
 		return Intersection();
 	} else {
-		Intersection i1 = Intersection((-2*dot_prod + sqrt(delta))/2);
-		Intersection i2 = Intersection((-2*dot_prod - sqrt(delta))/2);
+		Intersection i1 = Intersection((-2*dot_prod + sqrt(delta))/2, false);
+		Intersection i2 = Intersection((-2*dot_prod - sqrt(delta))/2, true);
 		// The closest positive intersection is chosen
 		return i1 | i2;
 	}
@@ -44,7 +44,8 @@ Intersection Plane::Intersect(const Ray &r) const {
 		// The ray and the plane are parallel
 		return Intersection();
 	} else {
-		return Intersection(-((r.Origin()-point_) | normal_) / dot_prod);
+		return Intersection(-((r.Origin()-point_) | normal_) / dot_prod,
+			(normal_|r.Direction()) < 0);
 	}
 }
 

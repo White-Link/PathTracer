@@ -16,7 +16,7 @@ endif()
 
 
 # Find CImg
-set(CIMG_H_PATH ${PROJECT_SOURCE_DIR}/..)
+set(CIMG_H_PATH ${PROJECT_SOURCE_DIR}/cimg)
 include_directories(${CIMG_H_PATH})
 if (NOT WIN32)
 	find_package(X11)

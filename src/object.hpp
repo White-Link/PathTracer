@@ -83,29 +83,37 @@ private:
 	/// The RawObject is stored using a pointer to forget its actual type.
 	std::shared_ptr<RawObject> raw_object_;
 
-	const Material material_; /// Material of the object.
+	const Material material_; //!< Material of the object.
+
+	/// Indicates if the object has null volume (if is not empty).
+	const bool is_flat_;
 
 public:
 	/// Creates an empty / invisible object.
-	Object() {
+	Object() : is_flat_{true} {
 		raw_object_.reset(new Sphere(Sphere(-1, Vector(0, 0, 0))));
 	}
 
 	/// Creates an object from a Sphere and a Material.
 	Object(const Sphere &s, const Material &material=Material())
-		: material_{material}, raw_object_{new Sphere(s)}
+		: material_{material}, raw_object_{new Sphere(s)}, is_flat_{false}
 	{
 	}
 
 	/// Creates an object from a Plane and a Material.
 	Object(const Plane &plane, const Material &material=Material())
-		: material_{material}, raw_object_{new Plane(plane)}
+		: material_{material}, raw_object_{new Plane(plane)}, is_flat_{true}
 	{
 	}
 
 	/// Outputs the Material of the object.
 	const Material& ObjectMaterial() const {
 		return material_;
+	}
+
+	/// Indicates if the object has null volume (if is not empty).
+	bool IsFlat() const {
+		return is_flat_;
 	}
 
 	/// Intersection primitive of the contained object.
@@ -117,4 +125,5 @@ public:
 	Vector Normal(const Vector &p) const {
 		return raw_object_->Normal(p);
 	}
+
 };

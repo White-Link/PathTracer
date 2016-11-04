@@ -96,23 +96,27 @@ public:
 class Scene {
 private:
 	Camera camera_; //!< Camera from which the scene is seen.
-	std::unique_ptr<ObjectContainer> objects_; //!< Container of all objects.
+	std::shared_ptr<ObjectContainer> objects_; //!< Container of all objects.
 	std::vector<unsigned char> image_; //!< The rendered scene is stored there.
 	std::vector<Light> lights_; //!< Stores all the light sources in the scene.
 
 	/**
-	 * \fn Vector GetColor(const Ray &r) const
+	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, double index=1) const
 	 * \brief Computes the color (R,G,B) of the input Ray, with R, G and B
 	 *        between 0 and 1.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
+	 * \param Refractive index of the current environment (irrelevant if the
+	 *        Ray is casted from inside an object).
 	 *
 	 * If a component of the color vector goes over 1, it will be counted as 1.
 	 */
-	Vector GetColor(const Ray &r, unsigned int nb_recursions) const;
+	Vector GetColor(const Ray &r, unsigned int nb_recursions, double index=1)
+		const;
 
 	/// Computes the intensity of the light at a given point, given a normal to
 	/// this point.
-	double LightIntensity(const Vector &p, const Vector &normal) const;
+	double LightIntensity(const Vector &p, const Vector &normal,
+		const Light &light) const;
 
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector

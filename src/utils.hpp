@@ -167,22 +167,27 @@ private:
 	/// reached. Assumed to be non-negative.
 	double t_;
 
+
+	bool out_; //!< Indicates if the intersection happens out of the object.
+
 public:
 	/// Creates an empty Intersection.
-	Intersection() : exists_{false}
+	Intersection() : exists_{false}, t_{0}, out_{false}
 	{
 	}
 
 	/**
-	 * \fn Intersection(double t)
+	 * \fn Intersection(double t, bool out)
 	 * \brief Creates an Intersection using the given ray parameter.
 	 * \param t Ray parameter at which the ray reached the intersection point,
 	 *          i.e. the latter is at distance t from the origin, following the
 	 *          ray direction.
+	 * \param out Indicates if the intersection happens out of the object.
 	 *
 	 * If the input paramter is non-positive, then the Intersection is empty.
 	 */
-	Intersection(double t) : exists_{t > 0}, t_{std::max(t, 0.)}
+	Intersection(double t, bool out) :
+		exists_{t > 0}, t_{std::max(t, 0.)}, out_{out}
 	{
 	}
 
@@ -200,6 +205,11 @@ public:
 		return t_;
 	}
 
+	/// Indicates if the intersection happens out of the object.
+	bool IsOut() const {
+		return out_;
+	}
+
 	/**
 	 * \fn Intersection operator|(const Intersection &inter) const
 	 * \brief Join operator on Intersections.
@@ -208,11 +218,15 @@ public:
 	 */
 	Intersection operator|(const Intersection &inter) const {
 		if (IsEmpty()) {
-			return Intersection(inter.Distance());
+			return Intersection(inter.Distance(), inter.IsOut());
 		} else if (inter.IsEmpty()) {
-			return Intersection(Distance());
+			return Intersection(t_, out_);
 		} else {
-			return Intersection(std::min(Distance(), inter.Distance()));
+			if (t_ < inter.Distance()) {
+				return Intersection(t_, out_);
+			} else {
+				return Intersection(inter.Distance(), inter.IsOut());
+			}
 		}
 	}
 

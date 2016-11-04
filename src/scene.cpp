@@ -16,20 +16,21 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 }
 
 
-double Scene::LightIntensity(const Vector &p, const Vector &normal) const {
-	Vector direction_light = lights_.at(0).Source() - p;
+double Scene::LightIntensity(const Vector &p, const Vector &normal,
+	const Light &light) const {
+	const Vector direction_light = light.Source() - p;
 	// Check if an object blocks the light
-	// Throw a ray to the light
+	// Throw a ray towards the light
 	Ray to_light(p, direction_light);
 	Intersection inter_light = objects_->Intersect(to_light).first;
 	double d = inter_light.Distance();
 	// If an object is between the light and the intersection point,
 	// then the color is dark
-	if (inter_light.IsEmpty() || d*d > direction_light.NormSquared()) {
+	if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
 		double dd = direction_light.NormSquared();
 		double intensity =
 			std::max(to_light.Direction()|normal, 0.)
-			* lights_.at(0).Intensity() / (M_PI * dd);
+			* light.Intensity() / (M_PI * dd);
 		return intensity;
 	} else {
 		return 0;
@@ -37,7 +38,8 @@ double Scene::LightIntensity(const Vector &p, const Vector &normal) const {
 }
 
 
-Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions) const {
+Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions, double index)
+	const {
 	// Check first the intersectio with the objects of the scene
 	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
 	Intersection inter = query.first;
@@ -50,33 +52,79 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions) const {
 		Vector intersection_point = r(inter.Distance());
 		Vector normal = o.Normal(intersection_point);
 		Vector final_color;
+		const Material &material = o.ObjectMaterial();
+		double fraction_diffuse;
+		if (nb_recursions == 0) {
+			fraction_diffuse = 1;
+		} else {
+			fraction_diffuse = material.FractionDiffuse();
+		}
+
+		// Diffuse color
 		for (const auto &l : lights_) {
-			Vector local_light_color;
-			const Material &material = o.ObjectMaterial();
-			Vector distribution;
-			if (nb_recursions == 0) {
-				distribution = Vector(1, 0, 0);
-			}  else {
-				distribution = material.Distribution();
-			}
-
-			// Diffuse color
-			double light_intensity = LightIntensity(intersection_point, normal);
-			local_light_color = local_light_color + distribution.x()
+			double light_intensity =
+				LightIntensity(intersection_point, normal, l);
+			final_color = final_color + fraction_diffuse
 				* light_intensity * material.DiffuseColor();
+		}
 
-			// Reflection
-			if (distribution.y() != 0) {
-				Ray reflected_ray(intersection_point,
-					r.Direction() - 2*(r.Direction() | normal)*normal);
-				local_light_color = local_light_color + distribution.y()
-					* GetColor(reflected_ray, nb_recursions-1);
-			}
+		// Refraction and reflexion
+		if (fraction_diffuse != 1) {
+			Vector color_refracted, color_reflected;
+			const Vector &ray_dir = r.Direction();
 
 			// Refraction
+			bool is_ray_refracted = false;
+			double n_in = index;
+			double n_out = material.RefractiveIndex();
+			if (!inter.IsOut()) {
+				std::swap(n_in, n_out);
+			}
+			double dot_prod = (ray_dir|normal);
+			if (material.Refraction()) {
+				double in_square_root =
+					1 - n_in/n_out*n_in/n_out*(1-dot_prod*dot_prod);
+				if (in_square_root > 0) {
+					is_ray_refracted = true;
+					Vector refracted_direction = n_in/n_out * ray_dir
+						- (n_in/n_out * dot_prod + sqrt(in_square_root))
+						* normal;
+					double new_index = index;
+					if (inter.IsOut() && o.IsFlat()) {
+						new_index = material.RefractiveIndex();
+					}
+					color_refracted = GetColor(
+						Ray(r(inter.Distance()*1.0001), refracted_direction),
+						nb_recursions-1, new_index);
+				}
+			}
 
+			// Reflection
+			Ray reflected_ray(intersection_point,
+				ray_dir - 2*(ray_dir | normal)*normal);
+			color_reflected = GetColor(reflected_ray, nb_recursions-1);
 
-			final_color = final_color + local_light_color;
+			double coef_reflexion;
+			if (!is_ray_refracted) {
+				coef_reflexion = 1;
+			} else {
+				// Fresnel coefficients
+				double square_root =
+					sqrt(1 - n_in/n_out*n_in/n_out*(1-dot_prod*dot_prod));
+				double coef_reflexion1 =
+					(-n_in*dot_prod - n_out*square_root)
+					/ (-n_in*dot_prod + n_out*square_root);
+				coef_reflexion1 *= coef_reflexion1;
+				double coef_reflexion2 =
+					(-n_out*dot_prod - n_in*square_root)
+					/ (-n_out*dot_prod + n_in*square_root);
+				coef_reflexion2 *= coef_reflexion2;
+				coef_reflexion = (coef_reflexion1 + coef_reflexion2)/2;
+			}
+
+			final_color = final_color + (1-fraction_diffuse)
+			 	* (coef_reflexion * color_reflected
+				+ (1-coef_reflexion) * color_refracted);
 		}
 		return final_color;
 	}
