@@ -22,6 +22,9 @@ private:
 	/// Assumed to lie between 0 and 1.
 	const double fraction_diffuse_ = 1;
 
+	/// Fraction of the diffuse light coming from reflection.
+	const double fraction_diffuse_brdf_ = 0.2;
+
 	/// Indicates if there is refraction on the Material.
 	const bool refractive_ = false;
 
@@ -35,11 +38,12 @@ public:
 	/// Constructs a Material from its diffuse and specular colors, and its
 	/// characteristics regarding refraction and reflexion.
 	Material(const Vector &color_diffuse,
-		double fraction_diffuse = 1, bool refractive=false,
-		double refractive_index=1.33,
+		double fraction_diffuse=1, double fraction_diffuse_brdf=0.2,
+		bool refractive=false, double refractive_index=1.33,
 		const Vector &color_specular = Vector(0, 0, 0)) :
 		color_diffuse_{color_diffuse}, color_specular_{color_specular},
-		fraction_diffuse_{fraction_diffuse}, refractive_{refractive},
+		fraction_diffuse_{fraction_diffuse},
+		fraction_diffuse_brdf_{fraction_diffuse_brdf}, refractive_{refractive},
 		index_{refractive_index}
 	{
 	}
@@ -58,6 +62,11 @@ public:
 	/// the Material.
 	double FractionDiffuse() const {
 		return fraction_diffuse_;
+	}
+
+	/// Outputs the fraction of the diffuse light coming from reflection.
+	double FractionDiffuseBRDF() const {
+		return fraction_diffuse_brdf_;
 	}
 
 	/// Indicates if there is refraction on the Material.

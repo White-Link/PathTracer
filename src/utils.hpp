@@ -66,6 +66,17 @@ public:
 		return sqrt(NormSquared());
 	}
 
+	/// Outputs a normalized orthogonal vector to the Vector.
+	Vector Orthogonal() const {
+		if (x_ != 0 || y_ != 0) {
+			Vector result(y_, -x_, 0);
+			result.Normalize();
+			return result;
+		} else {
+			return Vector(1, 0, 0);
+		}
+	}
+
 	/// Left-multiplication of a Vector by a scalar.
 	friend Vector operator*(double lambda, const Vector &v) {
 		return Vector(lambda*v.x(), lambda*v.y(), lambda*v.z());

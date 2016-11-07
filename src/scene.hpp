@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <random>
 #include "object.hpp"
 #include "object_container.hpp"
 
@@ -99,19 +100,28 @@ private:
 	std::shared_ptr<ObjectContainer> objects_; //!< Container of all objects.
 	std::vector<unsigned char> image_; //!< The rendered scene is stored there.
 	std::vector<Light> lights_; //!< Stores all the light sources in the scene.
+	double gamma_ = 2.2; //!< Correction to apply to the final intensity.
+
+	std::default_random_engine engine_;
+	/// Uniforma real distribution over [0,1].
+	std::uniform_real_distribution<double> distrib_
+		= std::uniform_real_distribution<double>(0, 1);
 
 	/**
-	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, double index=1) const
+	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, double nb_samples=1, double index=1)
 	 * \brief Computes the color (R,G,B) of the input Ray, with R, G and B
 	 *        between 0 and 1.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
 	 * \param Refractive index of the current environment (irrelevant if the
 	 *        Ray is casted from inside an object).
+	 * \param nb_samples Number of rays to relaunch is the diffusion
+	 *        computation.
 	 *
 	 * If a component of the color vector goes over 1, it will be counted as 1.
+	 * Irrelevant if nb_samples = 0.
 	 */
-	Vector GetColor(const Ray &r, unsigned int nb_recursions, double index=1)
-		const;
+	Vector GetColor(const Ray &r, unsigned int nb_recursions,
+		double nb_samples=1, double index=1);
 
 	/// Computes the intensity of the light at a given point, given a normal to
 	/// this point.
@@ -121,13 +131,21 @@ private:
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector
 	Scene(const Camera &camera, const ObjectVector &objects) :
-		camera_{camera}, objects_{new ObjectVector(objects)} {
+		camera_{camera}, objects_{new ObjectVector(objects)}
+	{
+		std::random_device r;
+		engine_ = std::default_random_engine(r());
 		image_.assign(3*camera.Height()*camera.Width(), 0);
 	}
 
 	/// Adds the input Light to the scene.
 	void AddLight(const Light &light) {
 		lights_.push_back(light);
+	}
+
+	/// Sets the gamma correction.
+	void SetGamma(double gamma) {
+		gamma_ = gamma;
 	}
 
 	/// Outputs the current camera.
@@ -146,11 +164,12 @@ public:
 	}
 
 	/**
-	 * \fn void Render(unsigned int nb_recursions)
+	 * \fn void Render(unsigned int nb_recursions, unsigned int nb_samples)
 	 * \brief Renders the current scene and stores it in image_.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
+	 * \param nb_samples Number of rays lauched by pixel.
 	 */
-	void Render(unsigned int nb_recursions);
+	void Render(unsigned int nb_recursions, unsigned int nb_samples);
 
 	/// Save the rendered scene into the given filename.
 	void Save(const std::string &file_name) const;
