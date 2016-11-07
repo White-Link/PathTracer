@@ -2,7 +2,8 @@
 
 
 std::pair<Intersection, const Object&> ObjectVector::Intersect(const Ray &r)
-	const {
+	const
+{
 	// Find the nearest intersection by looking at all the objects
 	Intersection inter;
 	size_t index;     // Index of the Object corresponding to inter in objects

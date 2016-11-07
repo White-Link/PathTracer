@@ -29,6 +29,7 @@ private:
 
 public:
 	/// Constructs a Camera from all its defining characteritics but right_.
+	/// up and direction are supposed to be orthogonal.
 	Camera(const Vector &origin, const Vector &direction, const Vector &up,
 		double fov, size_t height, size_t width) :
 		origin_{origin}, direction_{direction}, up_{up}, fov_{fov},
@@ -106,6 +107,20 @@ private:
 	/// Uniforma real distribution over [0,1].
 	std::uniform_real_distribution<double> distrib_
 		= std::uniform_real_distribution<double>(0, 1);
+
+	/// Computes the fraction of the color that is due to diffusion of light
+	/// accross the Scene, using parameters computed in GetColor.
+	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
+		double fraction_diffuse, double fraction_diffuse_brdf,
+		const Vector &normal, const Vector &intersection_point,
+		double index);
+
+	/// Computes the fraction of the color that is due reflection or refraction.
+	Vector GetTransmissionReflexionColor(const Ray &r, const Object &o,
+		const Vector &intersection_point, const Material &material,
+		const Intersection &inter, double fraction_diffuse, double index,
+		const Vector &normal, unsigned int nb_samples,
+		unsigned int nb_recursions);
 
 	/**
 	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, double nb_samples=1, double index=1)

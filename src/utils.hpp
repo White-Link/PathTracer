@@ -10,6 +10,9 @@
 #include <cmath>
 
 
+const double PI = 3.14159265358979323846;
+
+
 /**
  * \class Vector
  * \brief Defines a simple class representing vectors of \f$\mathbb{R}^3\f$.
