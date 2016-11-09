@@ -15,8 +15,14 @@ private:
 	/// Diffuse (R,G,B) of the Material, each component being between 0 and 1.
 	const Vector color_diffuse_ = Vector(1, 1, 1);
 
-	/// Specular (R,G,B) of the Material. TODO
-	const Vector color_specular_ = Vector(0, 0, 0);
+	/// Specular (R,G,B) of the Material.
+	const Vector color_specular_ = Vector(1, 1, 1);
+
+	/// Speculat coefficient of the Material.
+	const double specular_coefficient_ = 15;
+
+	/// Ponderation of the specular color.
+	const double fraction_specular_ = 0.05;
 
 	/// Fraction of the light that is returned as diffuse color by the Material.
 	/// Assumed to lie between 0 and 1.
@@ -40,8 +46,11 @@ public:
 	Material(const Vector &color_diffuse,
 		double fraction_diffuse=1, double fraction_diffuse_brdf=0.2,
 		bool refractive=false, double refractive_index=1.33,
-		const Vector &color_specular = Vector(0, 0, 0)) :
+		const Vector &color_specular=Vector(1, 1, 1),
+		double specular_coefficient=15, double fraction_specular=0.05) :
 		color_diffuse_{color_diffuse}, color_specular_{color_specular},
+		specular_coefficient_{specular_coefficient},
+		fraction_specular_{fraction_specular},
 		fraction_diffuse_{fraction_diffuse},
 		fraction_diffuse_brdf_{fraction_diffuse_brdf}, refractive_{refractive},
 		index_{refractive_index}
@@ -56,6 +65,16 @@ public:
 	/// Outputs the specular color of the Material.
 	const Vector& SpecularColor() const {
 		return color_specular_;
+	}
+
+	/// Outputs the specular coefficient of the Material.
+	double SpecularCoefficient() const {
+		return specular_coefficient_;
+	}
+
+	/// Outputs the ponderation of the specular color of the Material.
+	double FractionSpecular() const {
+		return fraction_specular_;
 	}
 
 	/// Outputs the fraction of the light that is returned as diffuse color by

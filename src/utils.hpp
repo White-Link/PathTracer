@@ -110,6 +110,11 @@ public:
 		return Vector(x_-v.x(), y_-v.y(), z_-v.z());
 	}
 
+	/// Multiplication component by component.
+	Vector operator*(const Vector &v) const {
+		return Vector(x_*v.x(), y_*v.y(), z_*v.z());
+	}
+
 	/// Dot product between two Vectors.
 	double operator|(const Vector &v) const {
 		return x_*v.x() + y_*v.y() + z_*v.z();

@@ -68,12 +68,12 @@ public:
  */
 class Light {
 private:
-	Vector source_;     //!< Point which light comes from.
-	double intensity_ ; //!< Intensity of the light.
+	const Vector source_;     //!< Point which light comes from.
+	const Vector intensity_ ; //!< Colored intensity of the light.
 
 public:
 	/// Constructs a Light from its punctual source and an intensity.
-	Light(Vector source, double intensity) :
+	Light(Vector source, const Vector &intensity) :
 		source_{source}, intensity_{intensity}
 	{
 	}
@@ -83,8 +83,8 @@ public:
 		return source_;
 	}
 
-	/// Outputs the intensity of the Light.
-	double Intensity() const {
+	/// Outputs the (R,G,B) intensity of the Light.
+	Vector Intensity() const {
 		return intensity_;
 	}
 };
@@ -107,6 +107,11 @@ private:
 	/// Uniforma real distribution over [0,1].
 	std::uniform_real_distribution<double> distrib_
 		= std::uniform_real_distribution<double>(0, 1);
+
+	/// Computes the intensity of the light at a given point, given a normal to
+	/// this point.
+	Vector LightIntensity(const Vector &p, const Vector &normal,
+		const Light &light, const Ray &r, const Material &material) const;
 
 	/// Computes the fraction of the color that is due to diffusion of light
 	/// accross the Scene, using parameters computed in GetColor.
@@ -137,11 +142,6 @@ private:
 	 */
 	Vector GetColor(const Ray &r, unsigned int nb_recursions,
 		double nb_samples=1, double index=1);
-
-	/// Computes the intensity of the light at a given point, given a normal to
-	/// this point.
-	double LightIntensity(const Vector &p, const Vector &normal,
-		const Light &light) const;
 
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector

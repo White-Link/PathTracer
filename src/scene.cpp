@@ -16,8 +16,8 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 }
 
 
-double Scene::LightIntensity(const Vector &p, const Vector &normal,
-	const Light &light) const
+Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
+	const Light &light, const Ray &r, const Material &material) const
 {
 	Vector direction_light = light.Source() - p;
 	// Check if an object blocks the light
@@ -28,13 +28,26 @@ double Scene::LightIntensity(const Vector &p, const Vector &normal,
 	// If an object is between the light and the intersection point,
 	// then the color is dark
 	if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
+		Vector color_light;
+		// Diffuse part
 		double dd = direction_light.NormSquared();
-		double intensity =
-			std::max(to_light.Direction()|normal, 0.) * light.Intensity()
-				/ (PI * dd);
-		return intensity;
+		color_light = color_light
+			+ std::max(to_light.Direction()|normal, 0.) * light.Intensity()
+			* (1-material.FractionDiffuseBRDF()) * material.FractionDiffuse()
+			/ (PI * dd) * material.DiffuseColor();
+
+		// Specular part
+		direction_light.Normalize();
+		Vector direction_light_reflected = direction_light
+			- 2*(direction_light|normal)*normal;
+		direction_light_reflected.Normalize();
+		color_light = color_light + material.FractionSpecular()
+			* pow(std::max(direction_light_reflected|r.Direction(), 0.),
+				material.SpecularCoefficient())
+			* light.Intensity() * material.SpecularColor() / dd;
+		return color_light;
 	} else {
-		return 0;
+		return Vector(0, 0, 0);
 	}
 }
 
@@ -148,13 +161,12 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 		return Vector(0, 0, 0);
 	}
 
-	// Diffuse color
+	// Diffuse and specular color
 	Vector diffuse_color;
 	for (const auto &l : lights_) {
-		double light_intensity =
-			LightIntensity(intersection_point, normal, l);
-		diffuse_color = diffuse_color + (1-material.FractionDiffuseBRDF())
-			* fraction_diffuse * light_intensity * material.DiffuseColor();
+		Vector color =
+			LightIntensity(intersection_point, normal, l, r, material);
+		diffuse_color = diffuse_color + color;
 	}
 	// Diffusion
 	if (nb_recursions != 0 && fraction_diffuse != 0

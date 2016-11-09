@@ -81,7 +81,7 @@ public:
 class Object {
 private:
 	/// The RawObject is stored using a pointer to forget its actual type.
-	std::shared_ptr<RawObject> raw_object_;
+	const std::shared_ptr<RawObject> raw_object_;
 
 	const Material material_; //!< Material of the object.
 
@@ -90,8 +90,9 @@ private:
 
 public:
 	/// Creates an empty / invisible object.
-	Object() : is_flat_{true} {
-		raw_object_.reset(new Sphere(Sphere(-1, Vector(0, 0, 0))));
+	Object() :
+		is_flat_{true}, raw_object_{new Sphere(Sphere(-1, Vector(0, 0, 0)))}
+	{
 	}
 
 	/// Creates an object from a Sphere and a Material.
