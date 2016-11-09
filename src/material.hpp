@@ -22,7 +22,7 @@ private:
 	const double specular_coefficient_ = 15;
 
 	/// Ponderation of the specular color.
-	const double fraction_specular_ = 0.05;
+	const double fraction_specular_ = 0.15;
 
 	/// Fraction of the light that is returned as diffuse color by the Material.
 	/// Assumed to lie between 0 and 1.
@@ -47,7 +47,7 @@ public:
 		double fraction_diffuse=1, double fraction_diffuse_brdf=0.2,
 		bool refractive=false, double refractive_index=1.33,
 		const Vector &color_specular=Vector(1, 1, 1),
-		double specular_coefficient=15, double fraction_specular=0.05) :
+		double specular_coefficient=15, double fraction_specular=0.15) :
 		color_diffuse_{color_diffuse}, color_specular_{color_specular},
 		specular_coefficient_{specular_coefficient},
 		fraction_specular_{fraction_specular},

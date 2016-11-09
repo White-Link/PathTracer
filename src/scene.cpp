@@ -17,38 +17,40 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 
 
 Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
-	const Light &light, const Ray &r, const Material &material) const
+	const Light &light, const Ray &r, const Material &material,
+	double fraction_diffuse, double fraction_diffuse_brdf) const
 {
-	Vector direction_light = light.Source() - p;
-	// Check if an object blocks the light
-	// Throw a ray towards the light
-	Ray to_light(p, direction_light);
-	Intersection inter_light = objects_->Intersect(to_light).first;
-	double d = inter_light.Distance();
-	// If an object is between the light and the intersection point,
-	// then the color is dark
-	if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
-		Vector color_light;
-		// Diffuse part
-		double dd = direction_light.NormSquared();
-		color_light = color_light
-			+ std::max(to_light.Direction()|normal, 0.) * light.Intensity()
-			* (1-material.FractionDiffuseBRDF()) * material.FractionDiffuse()
-			/ (PI * dd) * material.DiffuseColor();
+	if (fraction_diffuse != 0 || material.FractionSpecular() != 0) {
+		Vector direction_light = light.Source() - p;
+		// Check if an object blocks the light
+		// Throw a ray towards the light
+		Ray to_light(p, direction_light);
+		Intersection inter_light = objects_->Intersect(to_light).first;
+		double d = inter_light.Distance();
+		// If an object is between the light and the intersection point,
+		// then the color is dark
+		if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
+			Vector color_light;
+			// Diffuse part
+			double dd = direction_light.NormSquared();
+			color_light = color_light
+				+ std::max(to_light.Direction()|normal, 0.) * light.Intensity()
+				* (1-fraction_diffuse_brdf) * fraction_diffuse / (PI * dd)
+				* material.DiffuseColor();
 
-		// Specular part
-		direction_light.Normalize();
-		Vector direction_light_reflected = direction_light
-			- 2*(direction_light|normal)*normal;
-		direction_light_reflected.Normalize();
-		color_light = color_light + material.FractionSpecular()
-			* pow(std::max(direction_light_reflected|r.Direction(), 0.),
-				material.SpecularCoefficient())
-			* light.Intensity() * material.SpecularColor() / dd;
-		return color_light;
-	} else {
-		return Vector(0, 0, 0);
+			// Specular part
+			direction_light.Normalize();
+			Vector direction_light_reflected = direction_light
+				- 2*(direction_light|normal)*normal;
+			direction_light_reflected.Normalize();
+			color_light = color_light + material.FractionSpecular()
+				* pow(std::max(direction_light_reflected|r.Direction(), 0.),
+					material.SpecularCoefficient())
+				* light.Intensity() * material.SpecularColor() / (PI * dd);
+			return color_light;
+		}
 	}
+	return Vector(0, 0, 0);
 }
 
 
@@ -57,22 +59,17 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 	const Vector &intersection_point, double index)
 {
 	Vector result;
+	Vector ortho1 = normal.Orthogonal();
+	Vector ortho2 = normal^ortho1;
 	for (unsigned int i=0; i<nb_samples; i++) {
-		Vector color_brdf;
-		Vector ortho1 = normal.Orthogonal();
-		Vector ortho2 = normal^ortho1;
 		double r1 = distrib_(engine_);
 		double r2 = distrib_(engine_);
 		double root = sqrt(1-r2);
 		Vector random_direction = cos(2*PI*r1)*root*ortho1
 			+ sin(2*PI*r1)*root*ortho2 + sqrt(r2)*normal;
-		if (fraction_diffuse != 0 && fraction_diffuse_brdf != 0
-			&& nb_recursions != 0) {
-			color_brdf =
-				GetColor(Ray(intersection_point, random_direction),
-					nb_recursions-1, 1, index);
-		}
-		result = result + color_brdf;
+		result = result +
+			GetColor(Ray(intersection_point, random_direction),
+				nb_recursions-1, 1, index);
 	}
 	return fraction_diffuse * fraction_diffuse_brdf / PI * result / nb_samples;
 }
@@ -83,39 +80,34 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	const Intersection &inter, double fraction_diffuse, double index,
 	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions)
 {
-	Vector color_refracted, color_reflected;
+	Vector refracted_direction, reflected_direction;
 	const Vector &ray_dir = r.Direction();
 
 	// Refraction
 	bool is_ray_refracted = false;
+	double dot_prod = (ray_dir|normal);
 	double n_in = index;
 	double n_out = material.RefractiveIndex();
 	if (!inter.IsOut()) {
 		std::swap(n_in, n_out);
 	}
-	double dot_prod = (ray_dir|normal);
+	double new_index = index;
+	if (inter.IsOut() && o.IsFlat()) {
+		new_index = material.RefractiveIndex();
+	}
 	if (material.Refraction()) {
 		double in_square_root =
 			1 - n_in/n_out*n_in/n_out*(1-dot_prod*dot_prod);
 		if (in_square_root > 0) {
 			is_ray_refracted = true;
-			Vector refracted_direction = n_in/n_out * ray_dir
+			refracted_direction = n_in/n_out * ray_dir
 				- (n_in/n_out * dot_prod + sqrt(in_square_root))
 				* normal;
-			double new_index = index;
-			if (inter.IsOut() && o.IsFlat()) {
-				new_index = material.RefractiveIndex();
-			}
-			color_refracted = GetColor(
-				Ray(r(inter.Distance()*1.0001), refracted_direction),
-				nb_recursions-1, nb_samples, new_index);
 		}
 	}
 
 	// Reflection
-	Ray reflected_ray(intersection_point, ray_dir - 2*dot_prod*normal);
-	color_reflected =
-		GetColor(reflected_ray, nb_recursions-1, nb_samples, index);
+	reflected_direction = ray_dir - 2*dot_prod*normal;
 	double coef_reflection;
 	if (!is_ray_refracted) {
 		coef_reflection = 1;
@@ -127,8 +119,33 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 		coef_reflection = 1-k0 - (1-k0)*c*c*c*c*c;
 	}
 
-	return (1-fraction_diffuse) * (coef_reflection * color_reflected
-		+ (1-coef_reflection) * color_refracted);
+	Vector final_color;
+	if (coef_reflection == 1) {
+		final_color = GetColor(Ray(intersection_point, reflected_direction),
+			nb_recursions-1, 1, index);
+	} else if (coef_reflection == 0) {
+		final_color = GetColor(
+			Ray(r(inter.Distance()*1.0001), refracted_direction),
+			nb_recursions-1, 1, new_index);
+	} else {
+		for (unsigned int i=0; i<nb_samples; i++) {
+			double p = distrib_(engine_);
+			if (p < coef_reflection) {
+				final_color = final_color + GetColor(
+					Ray(intersection_point, reflected_direction),
+					nb_recursions-1, 1, index);
+			} else {
+				final_color = final_color + GetColor(
+					Ray(r(inter.Distance()*1.0001), refracted_direction),
+					nb_recursions-1, 1, new_index);
+			}
+		}
+		if (nb_samples != 0) {
+			final_color = final_color / nb_samples;
+		}
+	}
+
+	return (1-fraction_diffuse) * final_color;
 }
 
 
@@ -137,37 +154,35 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	// Check first the intersection with the objects of the scene
 	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
 	Intersection inter = query.first;
-	const Object &o = query.second;
-	const Material &material = o.ObjectMaterial();
-	Vector intersection_point = r(inter.Distance());
-	Vector normal = o.Normal(intersection_point);
-
-	double fraction_diffuse;
-	if (nb_recursions == 0) {
-		fraction_diffuse = 1;
-	} else {
-		fraction_diffuse = material.FractionDiffuse();
-	}
-
-	double fraction_diffuse_brdf;
-	if (nb_recursions == 0) {
-		fraction_diffuse_brdf = 0;
-	} else {
-		fraction_diffuse_brdf = material.FractionDiffuseBRDF();
-	}
 
 	if (inter.IsEmpty()) {
 		// No intersection
 		return Vector(0, 0, 0);
 	}
 
+	const Object &o = query.second;
+	const Material &material = o.ObjectMaterial();
+	Vector intersection_point = r(inter.Distance());
+	Vector normal = o.Normal(intersection_point);
+
+	double fraction_diffuse;
+	double fraction_diffuse_brdf;
+	if (nb_recursions == 0 || nb_samples == 0) {
+		fraction_diffuse = 1;
+		fraction_diffuse_brdf = 0;
+	} else {
+		fraction_diffuse = material.FractionDiffuse();
+		fraction_diffuse_brdf = material.FractionDiffuseBRDF();
+	}
+
 	// Diffuse and specular color
 	Vector diffuse_color;
 	for (const auto &l : lights_) {
-		Vector color =
-			LightIntensity(intersection_point, normal, l, r, material);
+		Vector color = LightIntensity(intersection_point, normal, l, r,
+			material, fraction_diffuse, fraction_diffuse_brdf);
 		diffuse_color = diffuse_color + color;
 	}
+
 	// Diffusion
 	if (nb_recursions != 0 && fraction_diffuse != 0
 		&& fraction_diffuse_brdf != 0 && nb_samples != 0)

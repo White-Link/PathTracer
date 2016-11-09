@@ -111,7 +111,8 @@ private:
 	/// Computes the intensity of the light at a given point, given a normal to
 	/// this point.
 	Vector LightIntensity(const Vector &p, const Vector &normal,
-		const Light &light, const Ray &r, const Material &material) const;
+		const Light &light, const Ray &r, const Material &material,
+		double fraction_diffuse, double fraction_diffuse_brdf) const;
 
 	/// Computes the fraction of the color that is due to diffusion of light
 	/// accross the Scene, using parameters computed in GetColor.
