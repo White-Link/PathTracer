@@ -55,7 +55,8 @@ Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
 
 
 Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
-	double fraction_diffuse, double fraction_diffuse_brdf, const Vector &normal,
+	double fraction_diffuse, double fraction_diffuse_brdf,
+	const Material &material, const Vector &normal,
 	const Vector &intersection_point, double index)
 {
 	Vector result;
@@ -71,7 +72,8 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 			GetColor(Ray(intersection_point, random_direction),
 				nb_recursions-1, 1, index);
 	}
-	return fraction_diffuse * fraction_diffuse_brdf / PI * result / nb_samples;
+	return fraction_diffuse * fraction_diffuse_brdf / PI * result / nb_samples
+		* material.DiffuseColor();
 }
 
 
@@ -189,7 +191,8 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	{
 		diffuse_color = diffuse_color +
 			GetBRDFColor(nb_samples, nb_recursions, fraction_diffuse,
-				fraction_diffuse_brdf, normal, intersection_point, index);
+				fraction_diffuse_brdf, material, normal, intersection_point,
+				index);
 	}
 
 	// Refraction and reflection

@@ -118,8 +118,8 @@ private:
 	/// accross the Scene, using parameters computed in GetColor.
 	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 		double fraction_diffuse, double fraction_diffuse_brdf,
-		const Vector &normal, const Vector &intersection_point,
-		double index);
+		const Material &material, const Vector &normal,
+		const Vector &intersection_point, double index);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
 	Vector GetTransmissionReflexionColor(const Ray &r, const Object &o,

@@ -5,10 +5,11 @@ int main(int argc, char **argv) {
 	Material green = Material(Vector(0,0.7,0.2));
 	Material blue = Material(Vector(0.3,0.1,0.8));
 	Material red = Material(Vector(0.9,0.1,0));
+	Material white = Material(Vector(1,1,1));
 	Material glass = Material(Vector(0.9,0.1,0), 0, 0, true, 1.33);
 	Material red_refract = Material(Vector(0.9,0.1,0), 0, 0, true, 1.8);
 	Material red_mirror = Material(Vector(0.9,0.1,0), 0.2);
-	Object o1 = Object(Sphere(1, Vector(4, 0, 0)), red_refract);
+	Object o1 = Object(Sphere(1, Vector(4, 0, 0)), white);
 	Object o2 = Object(Plane(Vector(0,3,0), Vector(0,3,0)), red);
 	Object o3 = Object(Plane(Vector(0,-3,0), Vector(0,3,0)), blue);
 	Object o4 = Object(Plane(Vector(0,0,3), Vector(0,0,2)), green);
@@ -19,8 +20,8 @@ int main(int argc, char **argv) {
 	ObjectVector objects(objects_v.begin(), objects_v.end());
 	Camera camera(Vector(0,0,0), Vector(1,0,0), Vector(0,0,1), 60*PI/180, 900, 1600);
 	Scene scene(camera, objects);
-	scene.AddLight(Light(Vector(2, -2, 2), Vector(30, 30, 30)));
-	scene.Render(5, 150);
+	scene.AddLight(Light(Vector(2, -2, 2), Vector(50, 50, 50)));
+	scene.Render(3, 150);
 	scene.Save("test.bmp");
 	return 0;
 }

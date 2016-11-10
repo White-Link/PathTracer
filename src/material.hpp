@@ -29,7 +29,7 @@ private:
 	const double fraction_diffuse_ = 1;
 
 	/// Fraction of the diffuse light coming from reflection.
-	const double fraction_diffuse_brdf_ = 0.2;
+	const double fraction_diffuse_brdf_ = 0.5;
 
 	/// Indicates if there is refraction on the Material.
 	const bool refractive_ = false;
@@ -44,7 +44,7 @@ public:
 	/// Constructs a Material from its diffuse and specular colors, and its
 	/// characteristics regarding refraction and reflexion.
 	Material(const Vector &color_diffuse,
-		double fraction_diffuse=1, double fraction_diffuse_brdf=0.2,
+		double fraction_diffuse=1, double fraction_diffuse_brdf=0.5,
 		bool refractive=false, double refractive_index=1.33,
 		const Vector &color_specular=Vector(1, 1, 1),
 		double specular_coefficient=15, double fraction_specular=0.15) :
