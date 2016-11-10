@@ -210,8 +210,7 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 
 void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples) {
 	size_t computed_pixels = 0;
-	#pragma omp parallel
-	#pragma for schedule(dynamic, 1)
+	#pragma omp parallel for schedule(dynamic, 1)
 	for (size_t i=0; i<Height(); i++) {
 		for (size_t j=0; j<Width(); j++) {
 			Ray r = camera_.Launch(i, j);
@@ -224,11 +223,11 @@ void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples) {
 			image_.at((Height()-i-1)*Width()+j + 2*Width()*Height())
 				= std::min(255, (int)(255*pow(color_pixel.z(), 1/gamma_)));
 
-			#pragma omp atomic
-			computed_pixels++;
-
 			#pragma omp critical
+			{
+			computed_pixels++;
 			show_progress((double) computed_pixels / (Height()*Width()));
+			}
 		}
 	}
 
