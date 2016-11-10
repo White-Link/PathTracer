@@ -1,3 +1,8 @@
+/**
+ * \file object_container.hpp
+ * \brief Defines classes that deals with sets of objects.
+ */
+
 #pragma once
 
 #include <vector>

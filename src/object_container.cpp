@@ -1,3 +1,9 @@
+/**
+ * \file object_container.cpp
+ * \brief Implements classes that deals with sets of objects.
+ */
+
+
 #include "object_container.hpp"
 
 

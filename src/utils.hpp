@@ -7,10 +7,14 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 
 
 const double PI = 3.14159265358979323846;
+
+
+void show_progress(double progress);
 
 
 /**
