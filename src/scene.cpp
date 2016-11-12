@@ -103,8 +103,7 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 		if (in_square_root > 0) {
 			is_ray_refracted = true;
 			refracted_direction = n_in/n_out * ray_dir
-				- (n_in/n_out * dot_prod + sqrt(in_square_root))
-				* normal;
+				- (n_in/n_out * dot_prod + sqrt(in_square_root)) * normal;
 		}
 	}
 
@@ -124,15 +123,15 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	Vector final_color;
 	if (coef_reflection == 1) {
 		final_color = GetColor(Ray(intersection_point, reflected_direction),
-			nb_recursions-1, 1, index);
+			nb_recursions-1, nb_samples, index);
 	} else if (coef_reflection == 0) {
 		final_color = GetColor(
 			Ray(r(inter.Distance()*1.0001), refracted_direction),
-			nb_recursions-1, 1, new_index);
+			nb_recursions-1, nb_samples, new_index);
 	} else {
 		for (unsigned int i=0; i<nb_samples; i++) {
 			double p = distrib_(engine_);
-			if (p < coef_reflection) {
+			if (p <= coef_reflection) {
 				final_color = final_color + GetColor(
 					Ray(intersection_point, reflected_direction),
 					nb_recursions-1, 1, index);
@@ -230,7 +229,7 @@ void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples) {
 			}
 		}
 	}
-
+	std::cout << std::endl;
 }
 
 void Scene::Save(const std::string &file_name) const {
