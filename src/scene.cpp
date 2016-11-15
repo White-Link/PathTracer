@@ -47,6 +47,7 @@ Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
 				* pow(std::max(direction_light_reflected|r.Direction(), 0.),
 					material.SpecularCoefficient())
 				* light.Intensity() * material.SpecularColor() / (PI * dd);
+
 			return color_light;
 		}
 	}
@@ -57,8 +58,9 @@ Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
 Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 	double fraction_diffuse, double fraction_diffuse_brdf,
 	const Material &material, const Vector &normal,
-	const Vector &intersection_point, double index)
+	const Vector &intersection_point, double index, double intensity)
 {
+	double coef = fraction_diffuse * fraction_diffuse_brdf / PI;
 	Vector result;
 	Vector ortho1 = normal.Orthogonal();
 	Vector ortho2 = normal^ortho1;
@@ -70,17 +72,17 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 			+ sin(2*PI*r1)*root*ortho2 + sqrt(r2)*normal;
 		result = result +
 			GetColor(Ray(intersection_point, random_direction),
-				nb_recursions-1, 1, index);
+				nb_recursions-1, 1, index, intensity*coef);
 	}
-	return fraction_diffuse * fraction_diffuse_brdf / PI * result / nb_samples
-		* material.DiffuseColor();
+	return coef * result / nb_samples * material.DiffuseColor();
 }
 
 
 Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	const Vector &intersection_point, const Material &material,
 	const Intersection &inter, double fraction_diffuse, double index,
-	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions)
+	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions,
+	double intensity)
 {
 	Vector refracted_direction, reflected_direction;
 	const Vector &ray_dir = r.Direction();
@@ -123,22 +125,25 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	Vector final_color;
 	if (coef_reflection == 1) {
 		final_color = GetColor(Ray(intersection_point, reflected_direction),
-			nb_recursions-1, nb_samples, index);
+			nb_recursions-1, nb_samples, index, (1-fraction_diffuse)*intensity);
 	} else if (coef_reflection == 0) {
 		final_color = GetColor(
 			Ray(r(inter.Distance()*1.0001), refracted_direction),
-			nb_recursions-1, nb_samples, new_index);
+			nb_recursions-1, nb_samples, new_index,
+			(1-fraction_diffuse)*intensity);
 	} else {
 		for (unsigned int i=0; i<nb_samples; i++) {
 			double p = distrib_(engine_);
 			if (p <= coef_reflection) {
 				final_color = final_color + GetColor(
 					Ray(intersection_point, reflected_direction),
-					nb_recursions-1, 1, index);
+					nb_recursions-1, 1, index,
+					(1-fraction_diffuse)*coef_reflection*intensity);
 			} else {
 				final_color = final_color + GetColor(
 					Ray(r(inter.Distance()*1.0001), refracted_direction),
-					nb_recursions-1, 1, new_index);
+					nb_recursions-1, 1, new_index,
+					(1-fraction_diffuse)*(1-coef_reflection)*intensity);
 			}
 		}
 		if (nb_samples != 0) {
@@ -151,12 +156,12 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 
 
 Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
-	double nb_samples, double index) {
+	unsigned int nb_samples, double index, double intensity) {
 	// Check first the intersection with the objects of the scene
 	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
 	Intersection inter = query.first;
 
-	if (inter.IsEmpty()) {
+	if (inter.IsEmpty() || intensity < 0.002) {
 		// No intersection
 		return Vector(0, 0, 0);
 	}
@@ -191,7 +196,7 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 		diffuse_color = diffuse_color +
 			GetBRDFColor(nb_samples, nb_recursions, fraction_diffuse,
 				fraction_diffuse_brdf, material, normal, intersection_point,
-				index);
+				index, intensity);
 	}
 
 	// Refraction and reflection
@@ -200,14 +205,15 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 		transmission_reflexion_color =
 			GetTransmissionReflexionColor(r, o, intersection_point, material,
 				inter, fraction_diffuse, index, normal, nb_samples,
-				nb_recursions);
+				nb_recursions, intensity);
 	}
 
 	return diffuse_color + transmission_reflexion_color;
 }
 
 
-void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples) {
+void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples,
+	bool progress_bar) {
 	size_t computed_pixels = 0;
 	#pragma omp parallel for schedule(dynamic, 1)
 	for (size_t i=0; i<Height(); i++) {
@@ -222,10 +228,12 @@ void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples) {
 			image_.at((Height()-i-1)*Width()+j + 2*Width()*Height())
 				= std::min(255, (int)(255*pow(color_pixel.z(), 1/gamma_)));
 
-			#pragma omp critical
-			{
-			computed_pixels++;
-			show_progress((double) computed_pixels / (Height()*Width()));
+			if (progress_bar) {
+				#pragma omp critical
+				{
+				computed_pixels++;
+				show_progress((double) computed_pixels / (Height()*Width()));
+				}
 			}
 		}
 	}

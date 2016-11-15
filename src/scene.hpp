@@ -119,30 +119,34 @@ private:
 	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 		double fraction_diffuse, double fraction_diffuse_brdf,
 		const Material &material, const Vector &normal,
-		const Vector &intersection_point, double index);
+		const Vector &intersection_point, double index, double intensity);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
 	Vector GetTransmissionReflexionColor(const Ray &r, const Object &o,
 		const Vector &intersection_point, const Material &material,
 		const Intersection &inter, double fraction_diffuse, double index,
 		const Vector &normal, unsigned int nb_samples,
-		unsigned int nb_recursions);
+		unsigned int nb_recursions, double intensity);
 
 	/**
-	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, double nb_samples=1, double index=1)
+	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, unsigned int nb_samples=1, double index=1, double intensity=1)
 	 * \brief Computes the color (R,G,B) of the input Ray, with R, G and B
 	 *        between 0 and 1.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
-	 * \param Refractive index of the current environment (irrelevant if the
-	 *        Ray is casted from inside an object).
 	 * \param nb_samples Number of rays to relaunch is the diffusion
 	 *        computation.
+	 * \param index Refractive index of the current environment (irrelevant if
+	 *        the Ray is casted from inside an object).
+	 * \param intensity Importance of the computed color in the final pixel of
+	 *        the original launch Ray.
 	 *
 	 * If a component of the color vector goes over 1, it will be counted as 1.
+	 * Only complutes the diffuse part if the insity is not high enough, to
+	 * prevent useless recursions.
 	 * Irrelevant if nb_samples = 0.
 	 */
 	Vector GetColor(const Ray &r, unsigned int nb_recursions,
-		double nb_samples=1, double index=1);
+		unsigned int nb_samples=1, double index=1, double intensity=1);
 
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector
@@ -184,8 +188,11 @@ public:
 	 * \brief Renders the current scene and stores it in image_.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
 	 * \param nb_samples Number of rays lauched by pixel.
+	 * \param progress_bar it set to true, enables a progress bar in the command
+	 *        line.
 	 */
-	void Render(unsigned int nb_recursions, unsigned int nb_samples);
+	void Render(unsigned int nb_recursions, unsigned int nb_samples,
+		bool progress_bar=false);
 
 	/// Save the rendered scene into the given filename.
 	void Save(const std::string &file_name) const;
