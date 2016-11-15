@@ -137,6 +137,10 @@ public:
 };
 
 
+/// A Vector can be seen as a point.
+typedef Vector Point;
+
+
 /**
  * \class Ray
  * \brief Represents a ray, i.e. a half-line defined by its origin and a
@@ -144,19 +148,19 @@ public:
  */
 class Ray {
 private:
-	const Vector origin_; //!< Source point of the Ray.
+	const Point origin_; //!< Source point of the Ray.
 	Vector direction_;    //!< Direction of the Ray; assumed to be normalized.
 
 public:
 	/// Constructs a Ray from its origin and a direction.
-	Ray(const Vector &origin, const Vector &direction) :
+	Ray(const Point &origin, const Vector &direction) :
 		origin_{origin}, direction_{direction}
 	{
 		direction_.Normalize(); // The direction is directly normalized.
 	}
 
 	/// Returns the source of the Ray.
-	const Vector& Origin() const {
+	const Point& Origin() const {
 		return origin_;
 	}
 
@@ -172,7 +176,7 @@ public:
 	 * A small espilon is substracted from the given distance to get a point
 	 * that is "before" the intersection.
 	 */
-	Vector operator()(double t) const {
+	Point operator()(double t) const {
 		return origin_ + (t*0.999999)*direction_;
 	}
 };

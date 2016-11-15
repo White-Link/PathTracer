@@ -17,7 +17,7 @@
  */
 class Camera {
 private:
-	Vector origin_;    //!< Origin of all the rays.
+	Point origin_;     //!< Origin of all the rays.
 	Vector direction_; //!< Direction of the Camera; assumed to be normalized.
 	Vector up_;        //!< Vertical of the Camera; assumed to be normalized.
 	double fov_;       //!< Field of vision (in radians).
@@ -30,7 +30,7 @@ private:
 public:
 	/// Constructs a Camera from all its defining characteritics but right_.
 	/// up and direction are supposed to be orthogonal.
-	Camera(const Vector &origin, const Vector &direction, const Vector &up,
+	Camera(const Point &origin, const Vector &direction, const Vector &up,
 		double fov, size_t height, size_t width) :
 		origin_{origin}, direction_{direction}, up_{up}, fov_{fov},
 		height_{height}, width_{width}
@@ -68,18 +68,18 @@ public:
  */
 class Light {
 private:
-	const Vector source_;     //!< Point which light comes from.
+	const Point source_;      //!< Point which light comes from.
 	const Vector intensity_ ; //!< Colored intensity of the light.
 
 public:
 	/// Constructs a Light from its punctual source and an intensity.
-	Light(Vector source, const Vector &intensity) :
+	Light(Point source, const Vector &intensity) :
 		source_{source}, intensity_{intensity}
 	{
 	}
 
 	/// Outputs the source point of the Light.
-	const Vector& Source() const {
+	const Point& Source() const {
 		return source_;
 	}
 
@@ -110,7 +110,7 @@ private:
 
 	/// Computes the intensity of the light at a given point, given a normal to
 	/// this point.
-	Vector LightIntensity(const Vector &p, const Vector &normal,
+	Vector LightIntensity(const Point &p, const Vector &normal,
 		const Light &light, const Ray &r, const Material &material,
 		double fraction_diffuse, double fraction_diffuse_brdf) const;
 
@@ -119,11 +119,11 @@ private:
 	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 		double fraction_diffuse, double fraction_diffuse_brdf,
 		const Material &material, const Vector &normal,
-		const Vector &intersection_point, double index, double intensity);
+		const Point &intersection_point, double index, double intensity);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
 	Vector GetTransmissionReflexionColor(const Ray &r, const Object &o,
-		const Vector &intersection_point, const Material &material,
+		const Point &intersection_point, const Material &material,
 		const Intersection &inter, double fraction_diffuse, double index,
 		const Vector &normal, unsigned int nb_samples,
 		unsigned int nb_recursions, double intensity);

@@ -22,7 +22,7 @@ public:
 	virtual Intersection Intersect(const Ray &r) const = 0;
 
 	/// Computes the normal unitary vector to the object at the given point.
-	virtual Vector Normal(const Vector &p) const = 0;
+	virtual Vector Normal(const Point &p) const = 0;
 };
 
 
@@ -33,18 +33,18 @@ public:
 class Sphere : public RawObject {
 private:
 	const double radius_; //!< Radius of the Sphere.
-	const Vector center_; //!< Center point of the Sphere.
+	const Point center_; //!< Center point of the Sphere.
 
 public:
 	/// Creates a sphere with given radius and center.
-	Sphere(double radius, const Vector &center) :
+	Sphere(double radius, const Point &center) :
 		radius_{radius}, center_{center}
 	{
 	}
 
 	Intersection Intersect(const Ray &r) const;
 
-	Vector Normal(const Vector &p) const;
+	Vector Normal(const Point &p) const;
 };
 
 
@@ -54,19 +54,19 @@ public:
  */
 class Plane : public RawObject {
 private:
-	const Vector point_;  //!< Point of the Plane.
+	const Point point_;  //!< Point of the Plane.
 	const Vector normal_; //!< Normal of the Plane.
 
 public:
 	/// Creates a Plane with given normal and a point.
-	Plane(const Vector &point, const Vector &normal) :
+	Plane(const Point &point, const Vector &normal) :
 		point_{point}, normal_{normal}
 	{
 	}
 
 	Intersection Intersect(const Ray &r) const;
 
-	Vector Normal(const Vector &p) const;
+	Vector Normal(const Point &p) const;
 };
 
 
@@ -91,7 +91,7 @@ private:
 public:
 	/// Creates an empty / invisible object.
 	Object() :
-		is_flat_{true}, raw_object_{new Sphere(Sphere(-1, Vector(0, 0, 0)))}
+		is_flat_{true}, raw_object_{new Sphere(Sphere(-1, Point(0, 0, 0)))}
 	{
 	}
 

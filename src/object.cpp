@@ -8,7 +8,7 @@
 
 Intersection Sphere::Intersect(const Ray &r) const {
 	// Equivalent to find the roots of degree 2 polynomial
-	const Vector &origin = r.Origin();
+	const Point &origin = r.Origin();
 	double dot_prod = r.Direction()|(origin-center_);
 	double delta = 4*(dot_prod*dot_prod
 		- (center_-origin).NormSquared() + radius_*radius_);
@@ -23,7 +23,7 @@ Intersection Sphere::Intersect(const Ray &r) const {
 }
 
 
-Vector Sphere::Normal(const Vector &p) const {
+Vector Sphere::Normal(const Point &p) const {
 	Vector direction = p - center_;
 	double distance_to_center_squared = direction.NormSquared();
 	// Gives an "in" normal (directed towards the center) if v is in the sphere,
@@ -50,7 +50,7 @@ Intersection Plane::Intersect(const Ray &r) const {
 }
 
 
-Vector Plane::Normal(const Vector &p) const {
+Vector Plane::Normal(const Point &p) const {
 	Vector normal = normal_;
 	normal.Normalize();
 	if (((p - point_) | normal) < 0) {

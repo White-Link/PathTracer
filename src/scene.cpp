@@ -16,7 +16,7 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 }
 
 
-Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
+Vector Scene::LightIntensity(const Point &p, const Vector &normal,
 	const Light &light, const Ray &r, const Material &material,
 	double fraction_diffuse, double fraction_diffuse_brdf) const
 {
@@ -58,7 +58,7 @@ Vector Scene::LightIntensity(const Vector &p, const Vector &normal,
 Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 	double fraction_diffuse, double fraction_diffuse_brdf,
 	const Material &material, const Vector &normal,
-	const Vector &intersection_point, double index, double intensity)
+	const Point &intersection_point, double index, double intensity)
 {
 	double coef = fraction_diffuse * fraction_diffuse_brdf / PI;
 	Vector result;
@@ -79,7 +79,7 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 
 
 Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
-	const Vector &intersection_point, const Material &material,
+	const Point &intersection_point, const Material &material,
 	const Intersection &inter, double fraction_diffuse, double index,
 	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions,
 	double intensity)
@@ -168,7 +168,7 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 
 	const Object &o = query.second;
 	const Material &material = o.ObjectMaterial();
-	Vector intersection_point = r(inter.Distance());
+	Point intersection_point = r(inter.Distance());
 	Vector normal = o.Normal(intersection_point);
 
 	double fraction_diffuse;
