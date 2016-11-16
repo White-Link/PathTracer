@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <random>
 #include "object.hpp"
 #include "object_container.hpp"
 
@@ -103,8 +102,8 @@ private:
 	std::vector<Light> lights_; //!< Stores all the light sources in the scene.
 	double gamma_ = 2.2; //!< Correction to apply to the final intensity.
 
-	std::default_random_engine engine_;
-	/// Uniforma real distribution over [0,1].
+	std::default_random_engine engine_; //!< Random engine generator.
+	/// Uniform real distribution over [0,1].
 	std::uniform_real_distribution<double> distrib_
 		= std::uniform_real_distribution<double>(0, 1);
 

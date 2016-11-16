@@ -7,8 +7,12 @@
 #pragma once
 
 #include <memory>
+#include <random>
 #include "utils.hpp"
 #include "material.hpp"
+
+
+class AABB;
 
 
 /**
@@ -23,6 +27,9 @@ public:
 
 	/// Computes the normal unitary vector to the object at the given point.
 	virtual Vector Normal(const Point &p) const = 0;
+
+	/// Outputs a bounding box of the object as an AABB.
+	virtual AABB BoundingBox() const;
 };
 
 
@@ -45,6 +52,8 @@ public:
 	Intersection Intersect(const Ray &r) const;
 
 	Vector Normal(const Point &p) const;
+
+	AABB BoundingBox() const;
 };
 
 
@@ -54,7 +63,7 @@ public:
  */
 class Plane : public RawObject {
 private:
-	const Point point_;  //!< Point of the Plane.
+	const Point point_;   //!< Point of the Plane.
 	const Vector normal_; //!< Normal of the Plane.
 
 public:
@@ -67,6 +76,51 @@ public:
 	Intersection Intersect(const Ray &r) const;
 
 	Vector Normal(const Point &p) const;
+
+	AABB BoundingBox() const;
+};
+
+
+/**
+ * \class AABB
+ * \brief Box object, defined by two extremal points.
+ * \warning Should not be used in an actual scene; designed for BVH heuristics.
+ */
+class AABB : public RawObject {
+private:
+	Point p1_; //!< First extremal point (with minimum coordinates).
+	Point p2_; //!< Second extremal point (with maximum coordinates).
+
+public:
+	/// Creates an empty box.
+	AABB() {};
+
+	/// Creates a Box from two extremal points.
+	AABB(const Point &p1, const Point &p2) : p1_{p1}, p2_{p2}
+	{
+	}
+
+	/// Returns the minimum and maximum x of the box.
+	std::pair<double, double> XMinMax() const;
+
+	/// Returns the minimum and maximum y of the box.
+	std::pair<double, double> YMinMax() const;
+
+	/// Returns the minimum and maximum z of the box.
+	std::pair<double, double> ZMinMax() const;
+
+	/// Outputs the centroid of the box.
+	Point Centroid() const;
+
+	Intersection Intersect(const Ray &r) const;
+
+	/// \warning Does not return the normal of the object. Should not be used.
+	Vector Normal(const Point &p) const;
+
+	AABB BoundingBox() const;
+
+	/// Bounding box of two AABBs.
+	AABB operator||(const AABB &aabb) const;
 };
 
 
@@ -81,12 +135,12 @@ public:
 class Object {
 private:
 	/// The RawObject is stored using a pointer to forget its actual type.
-	const std::shared_ptr<RawObject> raw_object_;
+	std::shared_ptr<RawObject> raw_object_;
 
-	const Material material_; //!< Material of the object.
+	Material material_; //!< Material of the object.
 
 	/// Indicates if the object has null volume (if is not empty).
-	const bool is_flat_;
+	bool is_flat_;
 
 public:
 	/// Creates an empty / invisible object.
@@ -104,6 +158,12 @@ public:
 	/// Creates an object from a Plane and a Material.
 	Object(const Plane &plane, const Material &material=Material())
 		: material_{material}, raw_object_{new Plane(plane)}, is_flat_{true}
+	{
+	}
+
+	/// Creates an object from an AABB.
+	Object(const AABB &aabb, const Material &material=Material())
+		: material_{material}, raw_object_{new AABB(aabb)}, is_flat_{true}
 	{
 	}
 
@@ -125,6 +185,11 @@ public:
 	/// Computes the normal unitary vector to the object at the given point.
 	Vector Normal(const Vector &p) const {
 		return raw_object_->Normal(p);
+	}
+
+	/// Outputs a bounding box of the object as an AABB.
+	AABB BoundingBox() const {
+		return raw_object_->BoundingBox();
 	}
 
 };

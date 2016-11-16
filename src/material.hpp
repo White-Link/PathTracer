@@ -13,29 +13,29 @@
 class Material {
 private:
 	/// Diffuse (R,G,B) of the Material, each component being between 0 and 1.
-	const Vector color_diffuse_ = Vector(1, 1, 1);
+	Vector color_diffuse_ = Vector(1, 1, 1);
 
 	/// Specular (R,G,B) of the Material.
-	const Vector color_specular_ = Vector(1, 1, 1);
+	Vector color_specular_ = Vector(1, 1, 1);
 
 	/// Speculat coefficient of the Material.
-	const double specular_coefficient_ = 15;
+	double specular_coefficient_ = 15;
 
 	/// Ponderation of the specular color.
-	const double fraction_specular_ = 0.15;
+	double fraction_specular_ = 0.15;
 
 	/// Fraction of the light that is returned as diffuse color by the Material.
 	/// Assumed to lie between 0 and 1.
-	const double fraction_diffuse_ = 1;
+	double fraction_diffuse_ = 1;
 
 	/// Fraction of the diffuse light coming from reflection.
-	const double fraction_diffuse_brdf_ = 0.5;
+	double fraction_diffuse_brdf_ = 0.5;
 
 	/// Indicates if there is refraction on the Material.
-	const bool refractive_ = false;
+	bool refractive_ = false;
 
 	/// Refractive index of the Material.
-	const double index_ = 1.33;
+	double index_ = 1.33;
 
 public:
 	/// Constructs a black Material.

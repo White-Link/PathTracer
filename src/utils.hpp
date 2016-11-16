@@ -41,17 +41,17 @@ public:
 	}
 
 	/// Returns the first coordinate of the Vector.
-	double x() const {
+	const double& x() const {
 		return x_;
 	}
 
 	/// Returns the second coordinate of the Vector.
-	double y() const {
+	const double& y() const {
 		return y_;
 	}
 
 	/// Returns the third coordinate of the Vector.
-	double z() const {
+	const double& z() const {
 		return z_;
 	}
 
@@ -148,8 +148,8 @@ typedef Vector Point;
  */
 class Ray {
 private:
-	const Point origin_; //!< Source point of the Ray.
-	Vector direction_;    //!< Direction of the Ray; assumed to be normalized.
+	const Point origin_;   //!< Source point of the Ray.
+	Vector direction_;     //!< Direction of the Ray; assumed to be normalized.
 
 public:
 	/// Constructs a Ray from its origin and a direction.
@@ -170,7 +170,7 @@ public:
 	}
 
 	/**
-	 * \fn Vector operator()(double t) const
+	 * \fn Point operator()(double t) const
 	 * \brief Gives the point on the Ray at a given distance of the origin.
 	 *
 	 * A small espilon is substracted from the given distance to get a point
@@ -194,7 +194,6 @@ private:
 	/// reached. Assumed to be non-negative.
 	double t_;
 
-
 	bool out_; //!< Indicates if the intersection happens out of the object.
 
 public:
@@ -211,7 +210,7 @@ public:
 	 *          ray direction.
 	 * \param out Indicates if the intersection happens out of the object.
 	 *
-	 * If the input paramter is non-positive, then the Intersection is empty.
+	 * If the input parameter is non-positive, then the Intersection is empty.
 	 */
 	Intersection(double t, bool out) :
 		exists_{t > 0}, t_{std::max(t, 0.)}, out_{out}

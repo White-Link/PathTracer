@@ -95,17 +95,19 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	if (!inter.IsOut()) {
 		std::swap(n_in, n_out);
 	}
+	double in_out_ = n_in/n_out;
 	double new_index = index;
 	if (inter.IsOut() && o.IsFlat()) {
 		new_index = material.RefractiveIndex();
 	}
 	if (material.Refraction()) {
 		double in_square_root =
-			1 - n_in/n_out*n_in/n_out*(1-dot_prod*dot_prod);
+			1 - in_out_*in_out_*(1-dot_prod*dot_prod);
 		if (in_square_root > 0) {
 			is_ray_refracted = true;
-			refracted_direction = n_in/n_out * ray_dir
-				- (n_in/n_out * dot_prod + sqrt(in_square_root)) * normal;
+			refracted_direction = in_out_ * ray_dir
+				- (in_out_ * dot_prod + sqrt(in_square_root)) * normal;
+			refracted_direction.Normalize();
 		}
 	}
 
@@ -117,9 +119,9 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 	} else {
 		// Fresnel coefficients (approximation)
 		double k0 =
-			(n_in - n_out)*(n_in - n_out)/(n_in + n_out)*(n_in + n_out);
-		double c = 1+dot_prod;
-		coef_reflection = 1-k0 - (1-k0)*c*c*c*c*c;
+			(n_in - n_out)*(n_in - n_out)/((n_in + n_out)*(n_in + n_out));
+		double c = 1 + dot_prod;
+		coef_reflection = k0 + (1-k0)*c*c*c*c*c;
 	}
 
 	Vector final_color;
