@@ -15,8 +15,8 @@ Intersection Sphere::Intersect(const Ray &r) const {
 	if (delta < 0) {
 		return Intersection();
 	} else {
-		Intersection i1 = Intersection((-2*dot_prod + sqrt(delta))/2, false);
-		Intersection i2 = Intersection((-2*dot_prod - sqrt(delta))/2, true);
+		Intersection i1 = Intersection{(-2*dot_prod + sqrt(delta))/2, false};
+		Intersection i2 = Intersection{(-2*dot_prod - sqrt(delta))/2, true};
 		// The closest positive intersection is chosen
 		return i1 | i2;
 	}
@@ -39,7 +39,7 @@ Vector Sphere::Normal(const Point &p) const {
 
 AABB Sphere::BoundingBox() const {
 	Vector offset(radius_, radius_, radius_);
-	return AABB(center_ + offset, center_ - offset);
+	return AABB{center_ + offset, center_ - offset};
 }
 
 
@@ -48,10 +48,10 @@ Intersection Plane::Intersect(const Ray &r) const {
 	double dot_prod = (direction | normal_);
 	if (dot_prod == 0) {
 		// The ray and the plane are parallel
-		return Intersection();
+		return Intersection{};
 	} else {
-		return Intersection(-((r.Origin()-point_) | normal_) / dot_prod,
-			(normal_|r.Direction()) < 0);
+		return Intersection{-((r.Origin()-point_) | normal_) / dot_prod,
+			(normal_|direction) < 0};
 	}
 }
 
@@ -69,9 +69,73 @@ Vector Plane::Normal(const Point &p) const {
 
 
 AABB Plane::BoundingBox() const {
-	Vector inf(INFINITY, INFINITY, INFINITY);
-	return AABB(-inf, inf);
+	double double_inf = std::numeric_limits<double>::infinity();
+	Vector inf(double_inf, double_inf, double_inf);
+	return AABB{-inf, inf};
 }
+
+
+Vector Triangle::BarycenticCoordinates(const Point &p) const {
+	Vector v0 = p3_ - p1_;
+	Vector v1 = p2_ - p1_;
+	Vector v2 = p   - p1_;
+	double dot00 = v0.NormSquared();
+	double dot01 = (v0|v1);
+	double dot02 = (v0|v2);
+	double dot11 = v1.NormSquared();
+	double dot12 = (v1|v2);
+	double inv_denom = 1 / (dot00*dot11 - dot01*dot01);
+	double u = (dot11*dot02 - dot01*dot12) * inv_denom;
+	double v = (dot00*dot12 - dot01*dot02) * inv_denom;
+	return Vector{u, v, 1-u-v};
+}
+
+
+Intersection Triangle::Intersect(const Ray &r) const {
+	const Vector &direction = r.Direction();
+
+	// Plane intersection
+	double dot_prod = (direction | normal_plane_);
+	if (dot_prod == 0) {
+		// The ray and the plane are parallel
+		return Intersection{};
+	} else {
+		// Possible intersection
+		double t = -((r.Origin()-p1_) | normal_plane_) / dot_prod;
+		Vector barycentric = BarycenticCoordinates(r(t));
+		if (barycentric.x() > 0 && barycentric.y() > 0 && barycentric.z() > 0) {
+			return Intersection{t, (direction|normal_plane_) < 0};
+		} else {
+			return Intersection{};
+		}
+	}
+}
+
+
+Vector Triangle::Normal(const Point &p) const {
+    Vector barycentric = BarycenticCoordinates(p);
+	Vector normal = barycentric.x()*normal1_
+		+ barycentric.y()*normal2_
+		+ barycentric.z()*normal3_;
+	// Outputs a well-oriented normal
+	if (((p1_-p)|normal_plane_) > 0) {
+		return normal;
+	} else {
+		return -normal;
+	}
+}
+
+
+AABB Triangle::BoundingBox() const {
+	double x_min = std::min(p1_.x(), std::min(p2_.x(), p3_.x()));
+	double x_max = std::max(p1_.x(), std::max(p2_.x(), p3_.x()));
+	double y_min = std::min(p1_.y(), std::min(p2_.y(), p3_.y()));
+	double y_max = std::max(p1_.y(), std::max(p2_.y(), p3_.y()));
+	double z_min = std::min(p1_.z(), std::min(p2_.z(), p3_.z()));
+	double z_max = std::max(p1_.z(), std::max(p2_.z(), p3_.z()));
+	return AABB{Point{x_min, y_min, z_min}, Point{x_max, y_max, z_max}};
+}
+
 
 
 std::pair<double, double> AABB::XMinMax() const {
@@ -111,8 +175,8 @@ Point AABB::Centroid() const {
 
 
 Intersection AABB::Intersect(const Ray &r) const {
-	Vector inv_direction = Vector(
-		1/r.Direction().x(), 1/r.Direction().y(), 1/r.Direction().z());
+	Vector inv_direction = Vector{
+		1/r.Direction().x(), 1/r.Direction().y(), 1/r.Direction().z()};
 	double t_x1 = (p1_.x() - r.Origin().x())*inv_direction.x();
 	double t_x2 = (p2_.x() - r.Origin().x())*inv_direction.x();
 	double t_y1 = (p1_.y() - r.Origin().y())*inv_direction.y();
@@ -124,20 +188,20 @@ Intersection AABB::Intersect(const Ray &r) const {
 	double t_max = std::min(std::min(
 		std::max(t_x1, t_x2), std::max(t_y1, t_y2)), std::max(t_z1, t_z2));
 	if (t_min > t_max) {
-		return Intersection();
+		return Intersection{};
 	} else {
-		return Intersection(t_min, true) | Intersection(t_max, false);
+		return Intersection{t_min, true} | Intersection{t_max, false};
 	}
 }
 
 
 Vector AABB::Normal(const Point &p) const {
-	return Vector(1, 0, 0);
+	return Vector{1, 0, 0};
 }
 
 
 AABB AABB::BoundingBox() const {
-	return AABB(*this);
+	return AABB{*this};
 }
 
 
@@ -148,14 +212,14 @@ AABB AABB::operator||(const AABB &aabb) const {
 	std::pair<double, double> y_min_max_2 = aabb.YMinMax();
 	std::pair<double, double> z_min_max_1 = ZMinMax();
 	std::pair<double, double> z_min_max_2 = aabb.ZMinMax();
-	return AABB(
-		Point(std::min(x_min_max_1.first, x_min_max_2.first),
+	return AABB{
+		Point{std::min(x_min_max_1.first, x_min_max_2.first),
 			std::min(y_min_max_1.first, y_min_max_2.first),
 			std::min(z_min_max_1.first, z_min_max_2.first)
-		),
-		Point(std::max(x_min_max_1.second, x_min_max_2.second),
+		},
+		Point{std::max(x_min_max_1.second, x_min_max_2.second),
 			std::max(y_min_max_1.second, y_min_max_2.second),
 			std::max(z_min_max_1.second, z_min_max_2.second)
-		)
-	);
+		}
+	};
 }

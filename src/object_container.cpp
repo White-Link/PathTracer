@@ -62,7 +62,7 @@ std::pair<Intersection, const Object&> BVH::Intersect(const Ray &r) const {
 		if (!bounding_box_.Intersect(r).IsEmpty()) {
 			return {object_.Intersect(r), object_};
 		} else {
-			return {Intersection(), object_};
+			return {Intersection{}, object_};
 		}
 	} else if (!bounding_box_.Intersect(r).IsEmpty()) {
 		auto inter_child1 = child1_->Intersect(r);
@@ -78,7 +78,7 @@ std::pair<Intersection, const Object&> BVH::Intersect(const Ray &r) const {
 			}
 		}
 	} else {
-		return {Intersection(), empty_object_};
+		return {Intersection{}, empty_object_};
 	}
 }
 
@@ -97,7 +97,7 @@ void BVH::Build(std::vector<std::pair<Object, AABB>>::iterator first,
 		std::nth_element(first, half, last,
 			[&coordinate](const std::pair<Object, AABB> &o1,
 				const std::pair<Object, AABB> &o2) {
-					CompareCentroids(coordinate, o1, o2);
+					return CompareCentroids(coordinate, o1, o2);
 				}
 			);
 		child1_.reset(new BVH); child1_->Build(first, half, engine, distrib);

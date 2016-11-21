@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <random>
+#include <chrono>
 #include "utils.hpp"
 #include "material.hpp"
 
@@ -29,7 +30,7 @@ public:
 	virtual Vector Normal(const Point &p) const = 0;
 
 	/// Outputs a bounding box of the object as an AABB.
-	virtual AABB BoundingBox() const;
+	virtual AABB BoundingBox() const = 0;
 };
 
 
@@ -45,7 +46,8 @@ private:
 public:
 	/// Creates a sphere with given radius and center.
 	Sphere(double radius, const Point &center) :
-		radius_{radius}, center_{center}
+		radius_{radius},
+		center_{center}
 	{
 	}
 
@@ -69,8 +71,78 @@ private:
 public:
 	/// Creates a Plane with given normal and a point.
 	Plane(const Point &point, const Vector &normal) :
-		point_{point}, normal_{normal}
+		point_{point},
+		normal_{normal}
 	{
+	}
+
+	Intersection Intersect(const Ray &r) const;
+
+	Vector Normal(const Point &p) const;
+
+	AABB BoundingBox() const;
+};
+
+
+/**
+ * \class Triangle
+ * \brief Triangle object, defines by three points.
+ *
+ * \remark The normals defined at each vertex of the Triangle should point to
+ *         the same half-space.
+ */
+class Triangle : public RawObject {
+private:
+	const Point p1_; //!< First point defining the Triangle.
+	const Point p2_; //!< Second point defining the Triangle.
+	const Point p3_; //!< Third point defining the Triangle.
+
+	/// Geometric normal of the triangle (normal of the embedding plane). Has
+	/// the same direction as normal_.
+	Vector normal_plane_;
+
+	const Vector normal1_; //!< Normal of the triangle of the first vertex.
+	const Vector normal2_; //!< Normal of the triangle of the second vertex.
+	const Vector normal3_; //!< Normal of the triangle of the third vertex.
+
+	/**
+	 * \fn Vector BarycenticCoordinates(const Point &p) const
+	 * \brief Computes the barycentric coordinates of the input point.
+	 * \input p Point assumed to lie in the embedding plane of the triangle.
+	 * \return A Vector \f$\lambda_1, \lambda_2, \lambda_3\f$ of the barycentric
+	 *         coordinates of, respectively, the first, second and third vertex.
+	 */
+	 Vector BarycenticCoordinates(const Point &p) const;
+
+public:
+	/// Creates a Triangle from its three vertices, assumed to be pairwise
+	/// distinct, using the normal of their embedding plane.
+	Triangle(const Point &p1, const Point &p2, const Point &p3) :
+		p1_{p1},
+		p2_{p2},
+		p3_{p3},
+		normal_plane_{(p2-p1)^(p3-p1)},
+		normal1_{normal_plane_},
+		normal2_{normal_plane_},
+		normal3_{normal_plane_}
+	{
+		normal_plane_.Normalize();
+	}
+
+	/// Creates a Triangle from its three vertices, assumed to be pairwise
+	/// distinct, using a given normal per vertex (assumed to be normalized)
+	Triangle(const Point &p1, const Point &p2, const Point &p3,
+		const Vector &normal1, const Vector &normal2, const Vector &normal3
+	) :
+	p1_{p1},
+	p2_{p2},
+	p3_{p3},
+	normal_plane_{(p2-p1)^(p3-p1)},
+	normal1_{normal1},
+	normal2_{normal2},
+	normal3_{normal3}
+	{
+		normal_plane_.Normalize();
 	}
 
 	Intersection Intersect(const Ray &r) const;
@@ -96,7 +168,9 @@ public:
 	AABB() {};
 
 	/// Creates a Box from two extremal points.
-	AABB(const Point &p1, const Point &p2) : p1_{p1}, p2_{p2}
+	AABB(const Point &p1, const Point &p2) :
+		p1_{p1},
+		p2_{p2}
 	{
 	}
 
@@ -145,25 +219,28 @@ private:
 public:
 	/// Creates an empty / invisible object.
 	Object() :
-		is_flat_{true}, raw_object_{new Sphere(Sphere(-1, Point(0, 0, 0)))}
+		is_flat_{true},
+		raw_object_{new Sphere(Sphere(-1, Point(0, 0, 0)))}
 	{
 	}
 
 	/// Creates an object from a Sphere and a Material.
-	Object(const Sphere &s, const Material &material=Material())
-		: material_{material}, raw_object_{new Sphere(s)}, is_flat_{false}
+	Object(const Sphere &s, const Material &material=Material()) :
+		material_{material},
+		raw_object_{new Sphere(s)}, is_flat_{false}
 	{
 	}
 
 	/// Creates an object from a Plane and a Material.
-	Object(const Plane &plane, const Material &material=Material())
-		: material_{material}, raw_object_{new Plane(plane)}, is_flat_{true}
+	Object(const Plane &plane, const Material &material=Material()) :
+		material_{material},
+		raw_object_{new Plane(plane)}, is_flat_{true}
 	{
 	}
 
 	/// Creates an object from an AABB.
-	Object(const AABB &aabb, const Material &material=Material())
-		: material_{material}, raw_object_{new AABB(aabb)}, is_flat_{true}
+	Object(const AABB &aabb, const Material &material=Material()) :
+		material_{material}, raw_object_{new AABB(aabb)}, is_flat_{true}
 	{
 	}
 

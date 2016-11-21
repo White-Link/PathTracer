@@ -30,9 +30,14 @@ public:
 	/// Constructs a Camera from all its defining characteritics but right_.
 	/// up and direction are supposed to be orthogonal.
 	Camera(const Point &origin, const Vector &direction, const Vector &up,
-		double fov, size_t height, size_t width) :
-		origin_{origin}, direction_{direction}, up_{up}, fov_{fov},
-		height_{height}, width_{width}
+		double fov, size_t height, size_t width
+	) :
+		origin_{origin},
+		direction_{direction},
+		up_{up},
+		fov_{fov},
+		height_{height},
+		width_{width}
 	{
 		direction_.Normalize();
 		up_.Normalize();
@@ -73,7 +78,8 @@ private:
 public:
 	/// Constructs a Light from its punctual source and an intensity.
 	Light(Point source, const Vector &intensity) :
-		source_{source}, intensity_{intensity}
+		source_{source},
+		intensity_{intensity}
 	{
 	}
 
@@ -105,7 +111,7 @@ private:
 	std::default_random_engine engine_; //!< Random engine generator.
 	/// Uniform real distribution over [0,1].
 	std::uniform_real_distribution<double> distrib_
-		= std::uniform_real_distribution<double>(0, 1);
+		= std::uniform_real_distribution<double>{0, 1};
 
 	/// Computes the intensity of the light at a given point, given a normal to
 	/// this point.
@@ -150,10 +156,12 @@ private:
 public:
 	/// Constructs a Scene from a Camera and an ObjectVector
 	Scene(const Camera &camera, const ObjectVector &objects) :
-		camera_{camera}, objects_{new ObjectVector(objects)}
+		camera_{camera},
+		objects_{new ObjectVector(objects)}
 	{
-		std::random_device r;
-		engine_ = std::default_random_engine(r());
+		using namespace std;
+		engine_ = default_random_engine(
+			chrono::high_resolution_clock::now().time_since_epoch().count());
 		image_.assign(3*camera.Height()*camera.Width(), 0);
 	}
 

@@ -43,16 +43,19 @@ public:
 
 	/// Constructs a Material from its diffuse and specular colors, and its
 	/// characteristics regarding refraction and reflexion.
-	Material(const Vector &color_diffuse,
-		double fraction_diffuse=1, double fraction_diffuse_brdf=0.5,
-		bool refractive=false, double refractive_index=1.33,
+	Material(const Vector &color_diffuse, double fraction_diffuse=1,
+		double fraction_diffuse_brdf=0.5, bool refractive=false,
+		double refractive_index=1.33,
 		const Vector &color_specular=Vector(1, 1, 1),
-		double specular_coefficient=15, double fraction_specular=0.15) :
-		color_diffuse_{color_diffuse}, color_specular_{color_specular},
+		double specular_coefficient=15, double fraction_specular=0.15
+	) :
+		color_diffuse_{color_diffuse},
+		color_specular_{color_specular},
 		specular_coefficient_{specular_coefficient},
 		fraction_specular_{fraction_specular},
 		fraction_diffuse_{fraction_diffuse},
-		fraction_diffuse_brdf_{fraction_diffuse_brdf}, refractive_{refractive},
+		fraction_diffuse_brdf_{fraction_diffuse_brdf},
+		refractive_{refractive},
 		index_{refractive_index}
 	{
 	}

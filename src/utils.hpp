@@ -31,12 +31,16 @@ private:
 
 public:
 	/// Initiates a Vector as the origin \f$\left(0,0,0\right)\f$.
-	Vector() : Vector{0, 0, 0}
+	Vector() :
+		Vector{0, 0, 0}
 	{
 	}
 
 	/// Initiates a Vector from the given coordinates.
-	Vector(double x, double y, double z) : x_{x}, y_{y}, z_{z}
+	Vector(double x, double y, double z) :
+		x_{x},
+		y_{y},
+		z_{z}
 	{
 	}
 
@@ -86,37 +90,37 @@ public:
 
 	/// Left-multiplication of a Vector by a scalar.
 	friend Vector operator*(double lambda, const Vector &v) {
-		return Vector(lambda*v.x(), lambda*v.y(), lambda*v.z());
+		return Vector{lambda*v.x(), lambda*v.y(), lambda*v.z()};
 	}
 
 	/// Right-multiplication of a Vector by a scalar.
 	Vector operator*(double lambda) const {
-		return Vector(lambda*x_, lambda*y_, lambda*z_);
+		return Vector{lambda*x_, lambda*y_, lambda*z_};
 	}
 
 	/// Division of a Vector by a scalar.
 	Vector operator/(double lambda) const {
-		return Vector(x_/lambda, y_/lambda, z_/lambda);
+		return Vector{x_/lambda, y_/lambda, z_/lambda};
 	}
 
 	/// Opposite of a Vector.
 	Vector operator-() const {
-		return Vector(-x_, -y_, -z_);
+		return Vector{-x_, -y_, -z_};
 	}
 
 	/// Addition of two Vectors.
 	Vector operator+(const Vector &v) const {
-		return Vector(x_+v.x(), y_+v.y(), z_+v.z());
+		return Vector{x_+v.x(), y_+v.y(), z_+v.z()};
 	}
 
 	/// Substraction of two Vectors.
 	Vector operator-(const Vector &v) const {
-		return Vector(x_-v.x(), y_-v.y(), z_-v.z());
+		return Vector{x_-v.x(), y_-v.y(), z_-v.z()};
 	}
 
 	/// Multiplication component by component.
 	Vector operator*(const Vector &v) const {
-		return Vector(x_*v.x(), y_*v.y(), z_*v.z());
+		return Vector{x_*v.x(), y_*v.y(), z_*v.z()};
 	}
 
 	/// Dot product between two Vectors.
@@ -126,7 +130,7 @@ public:
 
 	/// Cross product with another Vector.
 	Vector operator^(const Vector &v) const {
-		return Vector(y_*v.z()-z_*v.y(), z_*v.x()-x_*v.z(), x_*v.y()-y_*v.x());
+		return Vector{y_*v.z()-z_*v.y(), z_*v.x()-x_*v.z(), x_*v.y()-y_*v.x()};
 	}
 
 	/// Outputs the Vector.
@@ -154,7 +158,8 @@ private:
 public:
 	/// Constructs a Ray from its origin and a direction.
 	Ray(const Point &origin, const Vector &direction) :
-		origin_{origin}, direction_{direction}
+		origin_{origin},
+		direction_{direction}
 	{
 		direction_.Normalize(); // The direction is directly normalized.
 	}
@@ -198,7 +203,10 @@ private:
 
 public:
 	/// Creates an empty Intersection.
-	Intersection() : exists_{false}, t_{0}, out_{false}
+	Intersection() :
+		exists_{false},
+		t_{0},
+		out_{false}
 	{
 	}
 
@@ -213,7 +221,8 @@ public:
 	 * If the input parameter is non-positive, then the Intersection is empty.
 	 */
 	Intersection(double t, bool out) :
-		exists_{t > 0}, t_{std::max(t, 0.)}, out_{out}
+		exists_{t > 0},
+		t_{std::max(t, 0.)}, out_{out}
 	{
 	}
 
@@ -244,14 +253,14 @@ public:
 	 */
 	Intersection operator|(const Intersection &inter) const {
 		if (IsEmpty()) {
-			return Intersection(inter.Distance(), inter.IsOut());
+			return Intersection{inter.Distance(), inter.IsOut()};
 		} else if (inter.IsEmpty()) {
-			return Intersection(t_, out_);
+			return Intersection{t_, out_};
 		} else {
 			if (t_ < inter.Distance()) {
-				return Intersection(t_, out_);
+				return Intersection{t_, out_};
 			} else {
-				return Intersection(inter.Distance(), inter.IsOut());
+				return Intersection{inter.Distance(), inter.IsOut()};
 			}
 		}
 	}

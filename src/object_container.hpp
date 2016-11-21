@@ -21,7 +21,7 @@ protected:
 
 public:
 	/**
-	 * \fn virtual std::pair<Intersection, const Object&> Intersect(const Ray &r) const
+	 * \fn virtual std::pair<Intersection, const Object&> Intersect(const Ray &r) const = 0;
 	 * \brief Computes the closest Intersection with the input Ray to the origin
 	 *        of this Ray, and returns also the corresponding object.
 	 */
@@ -41,8 +41,8 @@ private:
 public:
 	/// Constructs an ObjectVector from an iterable containing objects.
 	template <class InputIterator>
-	ObjectVector(InputIterator first, InputIterator last)
-		: objects_{first, last}
+	ObjectVector(InputIterator first, InputIterator last) :
+		objects_{first, last}
 	{
 	}
 
@@ -82,14 +82,15 @@ public:
 	/// Constructs a BVH from an iterable containing objects.
 	template <class InputIterator>
 	BVH(InputIterator first, InputIterator last) {
-		std::vector<std::pair<Object, AABB>> objects;
+		using namespace std;
+		vector<std::pair<Object, AABB>> objects;
 		for (std::vector<Object>::iterator it=first; it!=last; it++) {
 			objects.push_back({*it, it->BoundingBox()});
 		}
-		std::random_device r;
-		std::default_random_engine engine = std::default_random_engine(r());
-		std::uniform_int_distribution<int> distrib =
-			std::uniform_int_distribution<int>(0, 2);
+		default_random_engine engine = default_random_engine(
+			chrono::high_resolution_clock::now().time_since_epoch().count());
+		uniform_int_distribution<int> distrib =
+			uniform_int_distribution<int>(0, 2);
 		Build(objects.begin(), objects.end(), engine, distrib);
 	}
 

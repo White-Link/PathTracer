@@ -12,7 +12,7 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 		(j + dj - (double)width_/2 + 0.5)*right_
 		+ (i + di - (double)height_/2 + 0.5)*up_
 		+ height_/(2*tan(fov_/2))*direction_;
-	return Ray(origin_, ray_direction);
+	return Ray{origin_, ray_direction};
 }
 
 
@@ -24,7 +24,7 @@ Vector Scene::LightIntensity(const Point &p, const Vector &normal,
 		Vector direction_light = light.Source() - p;
 		// Check if an object blocks the light
 		// Throw a ray towards the light
-		Ray to_light(p, direction_light);
+		Ray to_light{p, direction_light};
 		Intersection inter_light = objects_->Intersect(to_light).first;
 		double d = inter_light.Distance();
 		// If an object is between the light and the intersection point,
@@ -51,7 +51,7 @@ Vector Scene::LightIntensity(const Point &p, const Vector &normal,
 			return color_light;
 		}
 	}
-	return Vector(0, 0, 0);
+	return Vector{0, 0, 0};
 }
 
 
@@ -71,7 +71,7 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 		Vector random_direction = cos(2*PI*r1)*root*ortho1
 			+ sin(2*PI*r1)*root*ortho2 + sqrt(r2)*normal;
 		result = result +
-			GetColor(Ray(intersection_point, random_direction),
+			GetColor(Ray{intersection_point, random_direction},
 				nb_recursions-1, 1, index, intensity*coef);
 	}
 	return coef * result / nb_samples * material.DiffuseColor();
@@ -126,11 +126,11 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 
 	Vector final_color;
 	if (coef_reflection == 1) {
-		final_color = GetColor(Ray(intersection_point, reflected_direction),
+		final_color = GetColor(Ray{intersection_point, reflected_direction},
 			nb_recursions-1, nb_samples, index, (1-fraction_diffuse)*intensity);
 	} else if (coef_reflection == 0) {
 		final_color = GetColor(
-			Ray(r(inter.Distance()*1.0001), refracted_direction),
+			Ray{r(inter.Distance()*1.0001), refracted_direction},
 			nb_recursions-1, nb_samples, new_index,
 			(1-fraction_diffuse)*intensity);
 	} else {
@@ -138,12 +138,12 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 			double p = distrib_(engine_);
 			if (p <= coef_reflection) {
 				final_color = final_color + GetColor(
-					Ray(intersection_point, reflected_direction),
+					Ray{intersection_point, reflected_direction},
 					nb_recursions-1, 1, index,
 					(1-fraction_diffuse)*coef_reflection*intensity);
 			} else {
 				final_color = final_color + GetColor(
-					Ray(r(inter.Distance()*1.0001), refracted_direction),
+					Ray{r(inter.Distance()*1.0001), refracted_direction},
 					nb_recursions-1, 1, new_index,
 					(1-fraction_diffuse)*(1-coef_reflection)*intensity);
 			}
