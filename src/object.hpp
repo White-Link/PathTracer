@@ -22,7 +22,20 @@ class AABB;
  *        rendered in a scene.
  */
 class RawObject {
+protected:
+	Material material_; //!< Material of the object.
+
+	/// Indicates if the object has null volume (if is not empty).
+	bool is_flat_;
+
 public:
+	/// Default constructor of RawObject.
+	RawObject(const Material& material, bool is_flat) :
+		material_{material},
+		is_flat_{is_flat}
+	{
+	}
+
 	/// Computes the Intersection point between the object and the input Ray.
 	virtual Intersection Intersect(const Ray &r) const = 0;
 
@@ -31,6 +44,16 @@ public:
 
 	/// Outputs a bounding box of the object as an AABB.
 	virtual AABB BoundingBox() const = 0;
+
+	/// Outputs the Material of the object.
+	const Material& ObjectMaterial() const {
+		return material_;
+	}
+
+	/// Indicates if the object has null volume (if is not empty).
+	bool IsFlat() const {
+		return is_flat_;
+	}
 };
 
 
@@ -45,7 +68,10 @@ private:
 
 public:
 	/// Creates a sphere with given radius and center.
-	Sphere(double radius, const Point &center) :
+	Sphere(double radius, const Point &center,
+		const Material &material=Material()
+	) :
+		RawObject{material, false},
 		radius_{radius},
 		center_{center}
 	{
@@ -70,7 +96,10 @@ private:
 
 public:
 	/// Creates a Plane with given normal and a point.
-	Plane(const Point &point, const Vector &normal) :
+	Plane(const Point &point, const Vector &normal,
+		const Material &material=Material()
+	) :
+		RawObject{material, true},
 		point_{point},
 		normal_{normal}
 	{
@@ -117,7 +146,10 @@ private:
 public:
 	/// Creates a Triangle from its three vertices, assumed to be pairwise
 	/// distinct, using the normal of their embedding plane.
-	Triangle(const Point &p1, const Point &p2, const Point &p3) :
+	Triangle(const Point &p1, const Point &p2, const Point &p3,
+		const Material &material=Material()
+	) :
+		RawObject{material, true},
 		p1_{p1},
 		p2_{p2},
 		p3_{p3},
@@ -132,15 +164,17 @@ public:
 	/// Creates a Triangle from its three vertices, assumed to be pairwise
 	/// distinct, using a given normal per vertex (assumed to be normalized)
 	Triangle(const Point &p1, const Point &p2, const Point &p3,
-		const Vector &normal1, const Vector &normal2, const Vector &normal3
+		const Vector &normal1, const Vector &normal2, const Vector &normal3,
+		const Material &material=Material()
 	) :
-	p1_{p1},
-	p2_{p2},
-	p3_{p3},
-	normal_plane_{(p2-p1)^(p3-p1)},
-	normal1_{normal1},
-	normal2_{normal2},
-	normal3_{normal3}
+		RawObject{material, true},
+		p1_{p1},
+		p2_{p2},
+		p3_{p3},
+		normal_plane_{(p2-p1)^(p3-p1)},
+		normal1_{normal1},
+		normal2_{normal2},
+		normal3_{normal3}
 	{
 		normal_plane_.Normalize();
 	}
@@ -165,10 +199,16 @@ private:
 
 public:
 	/// Creates an empty box.
-	AABB() {};
+	AABB() :
+	 	RawObject{Material{}, false}
+	{
+	}
 
 	/// Creates a Box from two extremal points.
-	AABB(const Point &p1, const Point &p2) :
+	AABB(const Point &p1, const Point &p2,
+		const Material &material=Material()
+	) :
+		RawObject{material, false},
 		p1_{p1},
 		p2_{p2}
 	{
@@ -211,47 +251,39 @@ private:
 	/// The RawObject is stored using a pointer to forget its actual type.
 	std::shared_ptr<RawObject> raw_object_;
 
-	Material material_; //!< Material of the object.
-
-	/// Indicates if the object has null volume (if is not empty).
-	bool is_flat_;
-
 public:
 	/// Creates an empty / invisible object.
 	Object() :
-		is_flat_{true},
-		raw_object_{new Sphere(Sphere(-1, Point(0, 0, 0)))}
+		raw_object_{new Sphere(Sphere(-1, Point(0, 0, 0), Material{}))}
 	{
 	}
 
 	/// Creates an object from a Sphere and a Material.
-	Object(const Sphere &s, const Material &material=Material()) :
-		material_{material},
-		raw_object_{new Sphere(s)}, is_flat_{false}
+	Object(const Sphere &s) :
+		raw_object_{new Sphere{s}}
 	{
 	}
 
 	/// Creates an object from a Plane and a Material.
-	Object(const Plane &plane, const Material &material=Material()) :
-		material_{material},
-		raw_object_{new Plane(plane)}, is_flat_{true}
+	Object(const Plane &plane) :
+		raw_object_{new Plane{plane}}
 	{
 	}
 
 	/// Creates an object from an AABB.
-	Object(const AABB &aabb, const Material &material=Material()) :
-		material_{material}, raw_object_{new AABB(aabb)}, is_flat_{true}
+	Object(const AABB &aabb) :
+		raw_object_{new AABB{aabb}}
 	{
 	}
 
 	/// Outputs the Material of the object.
 	const Material& ObjectMaterial() const {
-		return material_;
+		return raw_object_->ObjectMaterial();
 	}
 
 	/// Indicates if the object has null volume (if is not empty).
 	bool IsFlat() const {
-		return is_flat_;
+		return raw_object_->IsFlat();
 	}
 
 	/// Intersection primitive of the contained object.

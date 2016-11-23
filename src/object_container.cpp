@@ -8,11 +8,11 @@
 #include "object_container.hpp"
 
 
-std::pair<Intersection, const Object&> ObjectVector::Intersect(const Ray &r)
+Intersection ObjectVector::Intersect(const Ray &r)
 	const
 {
 	// Find the nearest intersection by looking at all the objects
-	Intersection inter;
+	Intersection inter{empty_object_};
 	size_t index;     // Index of the Object corresponding to inter in objects
 	size_t count = 0; // Position of the currently considered object
 	for (const auto &o : objects_) {
@@ -24,9 +24,9 @@ std::pair<Intersection, const Object&> ObjectVector::Intersect(const Ray &r)
 		count++;
 	}
 	if (inter.IsEmpty()) {
-		return {inter, empty_object_};
+		return inter;
 	} else {
-		return {inter, objects_.at(index)};
+		return inter;
 	}
 }
 
@@ -56,29 +56,29 @@ bool BVH::IsLeaf() const {
 }
 
 
-std::pair<Intersection, const Object&> BVH::Intersect(const Ray &r) const {
+Intersection BVH::Intersect(const Ray &r) const {
 	if (IsLeaf()) {
 		// First check bounding box
 		if (!bounding_box_.Intersect(r).IsEmpty()) {
-			return {object_.Intersect(r), object_};
+			return object_.Intersect(r);
 		} else {
-			return {Intersection{}, object_};
+			return Intersection{empty_object_};
 		}
 	} else if (!bounding_box_.Intersect(r).IsEmpty()) {
-		auto inter_child1 = child1_->Intersect(r);
+		Intersection inter_child1 = child1_->Intersect(r);
 		Intersection inter_aabb_child2 = child2_->bounding_box_.Intersect(r);
-		if (inter_child1.first < inter_aabb_child2) {
+		if (inter_child1 < inter_aabb_child2) {
 			return inter_child1;
 		} else {
 			auto inter_child2 = child2_->Intersect(r);
-			if (inter_child1.first < inter_child2.first) {
+			if (inter_child1 < inter_child2) {
 				return inter_child1;
 			} else {
 				return inter_child2;
 			}
 		}
 	} else {
-		return {Intersection{}, empty_object_};
+		return Intersection{empty_object_};
 	}
 }
 

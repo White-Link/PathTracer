@@ -17,16 +17,15 @@
 class ObjectContainer {
 protected:
 	/// Invisible object to return when an Intersection is empty.
-	const Object empty_object_ = Object();
+	const AABB empty_object_{Vector{0, 0, 0}, Vector{0, 0, 0}};
 
 public:
 	/**
-	 * \fn virtual std::pair<Intersection, const Object&> Intersect(const Ray &r) const = 0;
+	 * \fn virtual Intersection Intersect(const Ray &r) const = 0;
 	 * \brief Computes the closest Intersection with the input Ray to the origin
 	 *        of this Ray, and returns also the corresponding object.
 	 */
-	virtual std::pair<Intersection, const Object&> Intersect(const Ray &r) const
-		= 0;
+	virtual Intersection Intersect(const Ray &r) const = 0;
 };
 
 
@@ -46,7 +45,7 @@ public:
 	{
 	}
 
-	std::pair<Intersection, const Object&> Intersect(const Ray &r) const;
+	Intersection Intersect(const Ray &r) const;
 };
 
 
@@ -97,7 +96,7 @@ public:
 	/// Indicates if the root node is a leaf (no child).
 	bool IsLeaf() const;
 
-	std::pair<Intersection, const Object&> Intersect(const Ray &r) const;
+	Intersection Intersect(const Ray &r) const;
 
 	/// Builds the BVH using objects between first and last.
 	void Build(std::vector<std::pair<Object, AABB>>::iterator first,

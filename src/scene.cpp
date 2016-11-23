@@ -25,7 +25,7 @@ Vector Scene::LightIntensity(const Point &p, const Vector &normal,
 		// Check if an object blocks the light
 		// Throw a ray towards the light
 		Ray to_light{p, direction_light};
-		Intersection inter_light = objects_->Intersect(to_light).first;
+		Intersection inter_light = objects_->Intersect(to_light);
 		double d = inter_light.Distance();
 		// If an object is between the light and the intersection point,
 		// then the color is dark
@@ -78,7 +78,7 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 }
 
 
-Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
+Vector Scene::GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 	const Point &intersection_point, const Material &material,
 	const Intersection &inter, double fraction_diffuse, double index,
 	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions,
@@ -160,15 +160,14 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const Object &o,
 Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	unsigned int nb_samples, double index, double intensity) {
 	// Check first the intersection with the objects of the scene
-	std::pair<Intersection, const Object&> query = objects_->Intersect(r);
-	Intersection inter = query.first;
+	Intersection inter = objects_->Intersect(r);
 
 	if (inter.IsEmpty() || intensity < 0.002) {
 		// No intersection
 		return Vector(0, 0, 0);
 	}
 
-	const Object &o = query.second;
+	const RawObject &o = inter.Object();
 	const Material &material = o.ObjectMaterial();
 	Point intersection_point = r(inter.Distance());
 	Vector normal = o.Normal(intersection_point);

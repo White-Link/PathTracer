@@ -13,10 +13,12 @@ Intersection Sphere::Intersect(const Ray &r) const {
 	double delta = 4*(dot_prod*dot_prod
 		- (center_-origin).NormSquared() + radius_*radius_);
 	if (delta < 0) {
-		return Intersection();
+		return Intersection{*this};
 	} else {
-		Intersection i1 = Intersection{(-2*dot_prod + sqrt(delta))/2, false};
-		Intersection i2 = Intersection{(-2*dot_prod - sqrt(delta))/2, true};
+		Intersection i1 = Intersection{(-2*dot_prod + sqrt(delta))/2, false,
+			*this};
+		Intersection i2 = Intersection{(-2*dot_prod - sqrt(delta))/2, true,
+			*this};
 		// The closest positive intersection is chosen
 		return i1 | i2;
 	}
@@ -48,10 +50,10 @@ Intersection Plane::Intersect(const Ray &r) const {
 	double dot_prod = (direction | normal_);
 	if (dot_prod == 0) {
 		// The ray and the plane are parallel
-		return Intersection{};
+		return Intersection{*this};
 	} else {
 		return Intersection{-((r.Origin()-point_) | normal_) / dot_prod,
-			(normal_|direction) < 0};
+			(normal_|direction) < 0, *this};
 	}
 }
 
@@ -98,15 +100,15 @@ Intersection Triangle::Intersect(const Ray &r) const {
 	double dot_prod = (direction | normal_plane_);
 	if (dot_prod == 0) {
 		// The ray and the plane are parallel
-		return Intersection{};
+		return Intersection{*this};
 	} else {
 		// Possible intersection
 		double t = -((r.Origin()-p1_) | normal_plane_) / dot_prod;
 		Vector barycentric = BarycenticCoordinates(r(t));
 		if (barycentric.x() > 0 && barycentric.y() > 0 && barycentric.z() > 0) {
-			return Intersection{t, (direction|normal_plane_) < 0};
+			return Intersection{t, (direction|normal_plane_) < 0, *this};
 		} else {
-			return Intersection{};
+			return Intersection{*this};
 		}
 	}
 }
@@ -188,9 +190,10 @@ Intersection AABB::Intersect(const Ray &r) const {
 	double t_max = std::min(std::min(
 		std::max(t_x1, t_x2), std::max(t_y1, t_y2)), std::max(t_z1, t_z2));
 	if (t_min > t_max) {
-		return Intersection{};
+		return Intersection{*this};
 	} else {
-		return Intersection{t_min, true} | Intersection{t_max, false};
+		return Intersection{t_min, true, *this}
+			| Intersection{t_max, false, *this};
 	}
 }
 

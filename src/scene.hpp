@@ -127,7 +127,7 @@ private:
 		const Point &intersection_point, double index, double intensity);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
-	Vector GetTransmissionReflexionColor(const Ray &r, const Object &o,
+	Vector GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 		const Point &intersection_point, const Material &material,
 		const Intersection &inter, double fraction_diffuse, double index,
 		const Vector &normal, unsigned int nb_samples,

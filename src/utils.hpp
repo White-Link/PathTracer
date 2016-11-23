@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -187,6 +188,8 @@ public:
 };
 
 
+class RawObject;
+
 /**
  * \class Intersection
  * \brief Represents an intersection point, or the empty set.
@@ -201,28 +204,36 @@ private:
 
 	bool out_; //!< Indicates if the intersection happens out of the object.
 
+	std::reference_wrapper<const RawObject> object_; //!< Object corresponding to the intersection.
+
 public:
 	/// Creates an empty Intersection.
-	Intersection() :
+	Intersection(std::reference_wrapper<const RawObject> object) :
 		exists_{false},
 		t_{0},
-		out_{false}
+		out_{false},
+		object_{object}
 	{
 	}
 
 	/**
-	 * \fn Intersection(double t, bool out)
+	 * \fn Intersection(double t, bool out, std::reference_wrapper<const RawObject> object)
 	 * \brief Creates an Intersection using the given ray parameter.
 	 * \param t Ray parameter at which the ray reached the intersection point,
 	 *          i.e. the latter is at distance t from the origin, following the
 	 *          ray direction.
 	 * \param out Indicates if the intersection happens out of the object.
+	 * \param object Object to which the intersection is tested.
 	 *
 	 * If the input parameter is non-positive, then the Intersection is empty.
 	 */
-	Intersection(double t, bool out) :
+	Intersection(double t, bool out,
+		std::reference_wrapper<const RawObject> object
+	) :
 		exists_{t > 0},
-		t_{std::max(t, 0.)}, out_{out}
+		t_{std::max(t, 0.)},
+		out_{out},
+		object_{object}
 	{
 	}
 
@@ -245,6 +256,11 @@ public:
 		return out_;
 	}
 
+	/// Outputs the object corresponding to the Intersection.
+	std::reference_wrapper<const RawObject> Object() const {
+		return object_;
+	}
+
 	/**
 	 * \fn Intersection operator|(const Intersection &inter) const
 	 * \brief Join operator on Intersections.
@@ -253,14 +269,16 @@ public:
 	 */
 	Intersection operator|(const Intersection &inter) const {
 		if (IsEmpty()) {
-			return Intersection{inter.Distance(), inter.IsOut()};
+			return Intersection{
+				inter.Distance(), inter.IsOut(), inter.Object()};
 		} else if (inter.IsEmpty()) {
-			return Intersection{t_, out_};
+			return Intersection{t_, out_, object_};
 		} else {
 			if (t_ < inter.Distance()) {
-				return Intersection{t_, out_};
+				return Intersection{t_, out_, object_};
 			} else {
-				return Intersection{inter.Distance(), inter.IsOut()};
+				return Intersection{
+					inter.Distance(), inter.IsOut(), inter.Object()};
 			}
 		}
 	}
