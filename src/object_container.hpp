@@ -94,7 +94,14 @@ public:
 	}
 
 	/// Indicates if the root node is a leaf (no child).
-	bool IsLeaf() const;
+	bool IsLeaf() const {
+		return !((child1_) || (child2_));
+	}
+
+	/// Outputs the bounding box of the container.
+	const AABB& BoundingBox() const {
+		return bounding_box_;
+	}
 
 	Intersection Intersect(const Ray &r) const;
 

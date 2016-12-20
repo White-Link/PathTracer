@@ -13,14 +13,9 @@ Intersection ObjectVector::Intersect(const Ray &r)
 {
 	// Find the nearest intersection by looking at all the objects
 	Intersection inter{empty_object_};
-	size_t index;     // Index of the Object corresponding to inter in objects
 	size_t count = 0; // Position of the currently considered object
 	for (const auto &o : objects_) {
-		Intersection previous = inter;
 		inter = inter | o.Intersect(r);
-		if (inter < previous) {
-			index = count;
-		}
 		count++;
 	}
 	if (inter.IsEmpty()) {
@@ -48,11 +43,6 @@ bool BVH::CompareCentroids(int i, const std::pair<Object, AABB> &o1,
 			return false;
 		}
 	}
-}
-
-
-bool BVH::IsLeaf() const {
-	return !((child1_) || (child2_));
 }
 
 
@@ -91,7 +81,7 @@ void BVH::Build(std::vector<std::pair<Object, AABB>>::iterator first,
 	if (last == first + 1) {
 		object_ = first->first;
 		bounding_box_ = first->second;
-	} else {
+	} else if (last > first) {
 		auto half = first + (last-first)/2;
 		int coordinate = distrib(engine);
 		std::nth_element(first, half, last,
@@ -101,7 +91,7 @@ void BVH::Build(std::vector<std::pair<Object, AABB>>::iterator first,
 				}
 			);
 		child1_.reset(new BVH); child1_->Build(first, half, engine, distrib);
-		child2_.reset(new BVH); child2_->Build(half+1, last, engine, distrib);
+		child2_.reset(new BVH); child2_->Build(half, last, engine, distrib);
 		bounding_box_ = child1_->bounding_box_ || child2_->bounding_box_;
 	}
 }
