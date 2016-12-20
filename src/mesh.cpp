@@ -48,6 +48,7 @@ void Mesh::Import(const std::string &filename, const Material &material)
 	unsigned int post_processing =
 		aiProcess_FindDegenerates        | // Removes degenerate meshes
 		aiProcess_FindInvalidData        | // Removes bad data like null normals
+		aiProcess_FixInfacingNormals     | // Makes normal directions coherent
 		aiProcess_GenUVCoords            | // Enforces cartesian coordinates
 		aiProcess_JoinIdenticalVertices  | // Removes duplicate vertices
 		aiProcess_OptimizeMeshes         | // Reduces the number of meshes
@@ -114,7 +115,7 @@ void Mesh::Import(const std::string &filename, const Material &material)
 				mesh->mNormals[p3_index][2]
 			};
 
-			triangles.emplace_back(Triangle(p1, p2, p3, -n1, -n2, -n3, material));
+			triangles.emplace_back(Triangle(p1, p2, p3, n1, n2, n3, material));
 		}
 	}
 

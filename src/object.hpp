@@ -178,6 +178,9 @@ public:
 		normal3_{normal3}
 	{
 		normal_plane_.Normalize();
+		if ((normal_plane_ | normal1) > 0) {
+			normal_plane_ = -normal_plane_;
+		}
 	}
 
 	Intersection Intersect(const Ray &r) const;
