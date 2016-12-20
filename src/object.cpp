@@ -119,6 +119,7 @@ Vector Triangle::Normal(const Point &p) const {
 	Vector normal = barycentric.x()*normal1_
 		+ barycentric.y()*normal2_
 		+ barycentric.z()*normal3_;
+	normal.Normalize();
 	// Outputs a well-oriented normal
 	if (((p1_-p)|normal_plane_) > 0) {
 		return normal;

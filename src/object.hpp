@@ -14,6 +14,7 @@
 
 
 class AABB;
+class Mesh;
 
 
 /**
@@ -269,6 +270,15 @@ public:
 		raw_object_{new Plane{plane}}
 	{
 	}
+
+	/// Creates an object from a Triangle.
+	Object(const Triangle &triangle) :
+		raw_object_{new Triangle{triangle}}
+	{
+	}
+
+	/// Creates an object from a Mesh. Empties the input mesh.
+	Object(Mesh &mesh);
 
 	/// Creates an object from an AABB.
 	Object(const AABB &aabb) :

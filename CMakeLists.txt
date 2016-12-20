@@ -4,8 +4,8 @@ project(PathTracer)
 set(CMAKE_BUILD_TYPE Release)
 
 
-# Verification of the support of C++11
-set(CMAKE_CXX_STANDARD 11)
+# Verification of the support of C++14
+set(CMAKE_CXX_STANDARD 14)
 
 
 # Find OpenMP
@@ -36,6 +36,11 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CIMG_CFLAGS}")
 
 
+# Find Assimp
+find_package(assimp REQUIRED)
+
+
+
 # Source files
 file(GLOB SOURCES src/*)
 
@@ -52,6 +57,7 @@ add_executable(
 if (NOT WIN32)
 	target_link_libraries(
 		path_tracer
+		assimp
 		X11
 	)
 endif()
