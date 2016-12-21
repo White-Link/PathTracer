@@ -13,10 +13,10 @@
 class Material {
 private:
 	/// Diffuse (R,G,B) of the Material, each component being between 0 and 1.
-	Vector color_diffuse_ = Vector(1, 1, 1);
+	Vector color_diffuse_ = Vector{1, 1, 1};
 
 	/// Specular (R,G,B) of the Material.
-	Vector color_specular_ = Vector(1, 1, 1);
+	Vector color_specular_ = Vector{1, 1, 1};
 
 	/// Speculat coefficient of the Material.
 	double specular_coefficient_ = 15;
@@ -46,8 +46,8 @@ public:
 	Material(const Vector &color_diffuse, double fraction_diffuse=1,
 		double fraction_diffuse_brdf=0.5, bool refractive=false,
 		double refractive_index=1.33,
-		const Vector &color_specular=Vector(1, 1, 1),
-		double specular_coefficient=15, double fraction_specular=0.15
+		const Vector &color_specular=Vector{1, 1, 1},
+		double specular_coefficient=30, double fraction_specular=0.15
 	) :
 		color_diffuse_{color_diffuse},
 		color_specular_{color_specular},

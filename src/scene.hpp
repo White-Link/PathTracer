@@ -117,21 +117,26 @@ private:
 	/// this point.
 	Vector LightIntensity(const Point &p, const Vector &normal,
 		const Light &light, const Ray &r, const Material &material,
-		double fraction_diffuse, double fraction_diffuse_brdf) const;
+		double fraction_diffuse_brdf) const;
 
 	/// Computes the fraction of the color that is due to diffusion of light
 	/// accross the Scene, using parameters computed in GetColor.
 	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
-		double fraction_diffuse, double fraction_diffuse_brdf,
+		double fraction_diffuse_brdf, const Material &material,
+		const Vector &normal, const Point &intersection_point, double index,
+		double intensity);
+
+	/// Computes the color that is due to illumination or BRDF.
+	Vector GetDiffuseColor(unsigned int nb_samples, const Ray &r,
+		unsigned int nb_recursions, double fraction_diffuse_brdf,
 		const Material &material, const Vector &normal,
 		const Point &intersection_point, double index, double intensity);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
 	Vector GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 		const Point &intersection_point, const Material &material,
-		const Intersection &inter, double fraction_diffuse, double index,
-		const Vector &normal, unsigned int nb_samples,
-		unsigned int nb_recursions, double intensity);
+		const Intersection &inter, double index, const Vector &normal,
+		unsigned int nb_samples, unsigned int nb_recursions, double intensity);
 
 	/**
 	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, unsigned int nb_samples=1, double index=1, double intensity=1)
@@ -191,15 +196,16 @@ public:
 	}
 
 	/**
-	 * \fn void Render(unsigned int nb_recursions, unsigned int nb_samples)
+	 * \fn void Render(unsigned int nb_recursions, unsigned int nb_samples, bool anti_aliasing=false, bool progress_bar=false)
 	 * \brief Renders the current scene and stores it in image_.
 	 * \param nb_recursions Limits the depth of the recursive calls tree.
 	 * \param nb_samples Number of rays lauched by pixel.
-	 * \param progress_bar it set to true, enables a progress bar in the command
+	 * \param anti_aliasing If set to true, enables anti_aliasing.
+	 * \param progress_bar If set to true, enables a progress bar in the command
 	 *        line.
 	 */
 	void Render(unsigned int nb_recursions, unsigned int nb_samples,
-		bool progress_bar=false);
+		bool anti_aliasing=false, bool progress_bar=false);
 
 	/// Save the rendered scene into the given filename.
 	void Save(const std::string &file_name) const;
