@@ -89,7 +89,7 @@ Vector Triangle::BarycenticCoordinates(const Point &p) const {
 	double inv_denom = 1 / (dot00*dot11 - dot01*dot01);
 	double u = (dot11*dot02 - dot01*dot12) * inv_denom;
 	double v = (dot00*dot12 - dot01*dot02) * inv_denom;
-	return Vector{u, v, 1-u-v};
+	return Vector{1-u-v, v, u};
 }
 
 
@@ -121,7 +121,7 @@ Vector Triangle::Normal(const Point &p) const {
 		+ barycentric.z()*normal3_;
 	normal.Normalize();
 	// Outputs a well-oriented normal
-	if (((p1_-p)|normal_plane_) > 0) {
+	if (((p1_-p)|normal_plane_) < 0) {
 		return normal;
 	} else {
 		return -normal;

@@ -44,7 +44,7 @@ Vector Scene::LightIntensity(const Point &p, const Vector &normal,
 				- 2*(direction_light|normal)*normal;
 			direction_light_reflected.Normalize();
 			color_light = color_light + material.FractionSpecular()
-				* pow(std::max(direction_light_reflected|r.Direction(), 0.),
+				* pow(std::max(-direction_light_reflected|r.Direction(), 0.),
 					material.SpecularCoefficient())
 				* light.Intensity() * material.SpecularColor() / (PI * dd);
 

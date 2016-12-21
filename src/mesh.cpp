@@ -54,9 +54,9 @@ void Mesh::Import(const std::string &filename, const Material &material)
 		aiProcess_OptimizeMeshes         | // Reduces the number of meshes
 		aiProcess_PreTransformVertices   | // Removes recursive meshes
 		aiProcess_RemoveComponent        | // Applies the 2nd step of this code
-		aiProcess_SortByPType            | // Isolates meshed with triangles
-		aiProcess_TransformUVCoords      | // Cartesian coordinates for textures
-		aiProcess_Triangulate            | // Triangulates all faces of meshes
+		aiProcess_SortByPType            | // Isolates meshes with triangles
+		//aiProcess_TransformUVCoords      | // Cartesian coordinates for textures
+		//aiProcess_Triangulate            | // Triangulates all faces of meshes
 		aiProcess_ValidateDataStructure    // Post-check of the importes mesh
 	;
 	// Chooses whether to enforce smooth normals
@@ -114,6 +114,9 @@ void Mesh::Import(const std::string &filename, const Material &material)
 				mesh->mNormals[p3_index][1],
 				mesh->mNormals[p3_index][2]
 			};
+			n1.Normalize();
+			n2.Normalize();
+			n3.Normalize();
 
 			triangles.emplace_back(Triangle(p1, p2, p3, n1, n2, n3, material));
 		}
