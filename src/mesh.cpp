@@ -55,8 +55,8 @@ void Mesh::Import(const std::string &filename, const Material &material)
 		aiProcess_PreTransformVertices   | // Removes recursive meshes
 		aiProcess_RemoveComponent        | // Applies the 2nd step of this code
 		aiProcess_SortByPType            | // Isolates meshes with triangles
-		//aiProcess_TransformUVCoords      | // Cartesian coordinates for textures
-		//aiProcess_Triangulate            | // Triangulates all faces of meshes
+		aiProcess_TransformUVCoords      | // Cartesian coordinates for textures
+		aiProcess_Triangulate            | // Triangulates all faces of meshes
 		aiProcess_ValidateDataStructure    // Post-check of the importes mesh
 	;
 	// Chooses whether to enforce smooth normals
