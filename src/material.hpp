@@ -8,7 +8,8 @@
 
 /**
  * \class Material
- * \brief Represents the material of an object (e.g. its color).
+ * \brief Represents the material of an object (e.g. its color, refractive
+ *        index...).
  */
 class Material {
 private:
@@ -26,26 +27,24 @@ private:
 	/// Assumed to lie between 0 and 1.
 	double opacity_ = 1;
 
-	/// Fraction of the diffuse light coming from reflection.
+	/// Fraction of the diffuse light coming from indirect illumination.
 	/// Assumed to lie between 0 and 1.
 	double fraction_diffuse_brdf_ = 0.5;
 
 	/// Specular coefficient of the Material.
-	double specular_coefficient_ = 0;
+	double specular_coefficient_ = 30;
 
-	/// Ponderation of the specular color.
-	/// Assumed to lie between 0 and 1.
+	/// Ponderation of the specular color. Assumed to lie between 0 and 1.
 	double fraction_specular_ = 1;
 
 	/// Indicates if there is refraction on the Material.
-	bool refractive_ = false;
+	bool refractive_ = true;
 
 	/// Refractive index of the Material.
-	double index_ = 1.33;
+	double index_ = 1;
 
 public:
-	/// Constructs a Material from its diffuse and specular colors, and its
-	/// characteristics regarding refraction and reflexion.
+	/// Constructs a Material from the set of its defining fields.
 	Material(
 		const Vector &color_diffuse = Vector{1, 1, 1},
 		const Vector &color_specular = Vector{1, 1, 1},

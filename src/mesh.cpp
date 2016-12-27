@@ -17,9 +17,10 @@ Object::Object(Mesh &mesh) :
 }
 
 
-void Mesh::Import(const std::string &filename, const std::string &folder,
-	const Material &material)
-{
+void Mesh::Import(
+	const std::string &filename, const std::string &folder,
+	const Material &material
+) {
 	Assimp::Importer importer;
 
 	// Removes the support of points and lines (only accepts polygons)
@@ -69,6 +70,7 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 	if (!scene) {
 		throw std::runtime_error(importer.GetErrorString());
 	}
+
 	std::vector<Object> triangles;
 	// Inspects all faces of all meshes
 	for (unsigned int i=0; i<scene->mNumMeshes; i++) {
@@ -123,8 +125,8 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 		};;
 		ai_material->Get(AI_MATKEY_COLOR_TRANSPARENT, ai_color_transparent);
 		Vector color_transparent{
-			//ai_color_transparent.r, ai_color_transparent.g,
-			1,1,1//ai_color_transparent.b
+			ai_color_transparent.r, ai_color_transparent.g,
+			ai_color_transparent.b
 		};
 		float opacity = material.Opacity();
 		ai_material->Get(AI_MATKEY_OPACITY, opacity);
@@ -146,6 +148,7 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 			index
 		};
 
+		// Adds all faces of the mesh in the set of triangles
 		for (unsigned int j=0; j<mesh->mNumFaces; j++) {
 			// The considered face is a triangle
 			const unsigned int id_p1 = mesh->mFaces[j].mIndices[0];
@@ -185,9 +188,6 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 				mesh->mNormals[id_p3][1],
 				mesh->mNormals[id_p3][2]
 			};
-			n1.Normalize();
-			n2.Normalize();
-			n3.Normalize();
 
 			// Face textures
 			float u1, v1, u2, v2, u3, v3;
@@ -202,6 +202,7 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 				if (!(u1 < 0 || u2 < 0 || u3 < 0 || v1 < 0 || v2 < 0 || v3 < 0))
 				has_uv_coordinates = true;
 			}
+
 			triangles.emplace_back(
 				Triangle(p1, p2, p3, n1, n2, n3, diffuse_texture,
 					specular_texture, has_uv_coordinates, u1, v1, u2, v2, u3,
@@ -210,6 +211,7 @@ void Mesh::Import(const std::string &filename, const std::string &folder,
 		}
 	}
 
+	// Builds the corresponding BVH
 	triangles_.reset(new BVH(triangles.begin(), triangles.end()));
 
 	// The generated aiScene is deleted by the library

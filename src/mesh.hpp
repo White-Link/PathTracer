@@ -10,26 +10,27 @@
 
 /**
  * \class Mesh
- * \brief Defines a set of triangles (geometrical model).
+ * \brief Defines a set of triangles using a BVH.
  */
 class Mesh : public RawObject {
 private:
-	/// Set of triangles representing the Mesh.
-	std::unique_ptr<BVH> triangles_;
+	std::unique_ptr<BVH> triangles_; //!< BVH representing the Mesh.
 
 	/*
 	 * \fn void Import(const std::string &filename, const std::string &folder, const Material &material)
 	 * \brief Loads into the Mesh the model given in the input path.
      * \param filename Path to the object file.
      * \param folder Folder of the texture files (with separator at the end).
-	 * \param material Material of the object.
+	 * \param material Default material of the object, used when some parameter
+	 *        is missing in the input file.
 	 *
-	 * Loads a model stored in the given file using Assimp library. Supports
+	 * Loads a model stored in the given file using library Assimp. Supports
 	 * .obj format when the normals are specified, and maybe some others (to be
 	 * determined).
 	 *
 	 * Loads textures in the file if there are some; otherwise, uses the
-	 * diffuse color of the input material.
+	 * diffuse color of the input material. This method only loads main textures
+	 * (first texture of each stack).
 	 *
 	 * Loads part of the material of the mesh:
 	 *  - diffuse color;
@@ -43,8 +44,10 @@ private:
 	 *
 	 * Credits to Maverick Chardet for half of the code of this function.
 	 */
-	void Import(const std::string &filename, const std::string &folder,
-		const Material &material);
+	void Import(
+		const std::string &filename, const std::string &folder,
+		const Material &material
+	);
 
 public:
     /**
@@ -52,10 +55,12 @@ public:
      * \brief Builds a mesh from a respresentation stored in a file.
      * \param filename Path to the object file.
      * \param folder Folder of the texture files (with separator at the end).
-	 * \param smooth_normals Indicates if the normals of the input model should
-	 *        be smoothed.
+	 * \param material Default material of the object, used when some parameter
+	 *        is missing in the input file.
      */
-    Mesh(const std::string &filename, const std::string &folder,
+    Mesh(
+		const std::string &filename,
+		const std::string &folder,
 		const Material &material=Material{}
 	) :
         RawObject{material, false}

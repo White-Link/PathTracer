@@ -1,6 +1,6 @@
 /**
  * \file object.cpp
- * \brief Implements classes of object.hpp.
+ * \brief Implements classes defined in object.hpp.
  */
 
 #include "object.hpp"
@@ -9,16 +9,18 @@
 Intersection Sphere::Intersect(const Ray &r) const {
 	// Equivalent to find the roots of degree 2 polynomial
 	const Point &origin = r.Origin();
-	double dot_prod = r.Direction()|(origin-center_);
-	double delta = 4*(dot_prod*dot_prod
-		- (center_-origin).NormSquared() + radius_*radius_);
+	double dot_prod = r.Direction() | (origin-center_);
+	double delta =
+		4*(dot_prod*dot_prod - (center_-origin).NormSquared() + radius_*radius_)
+	;
 	if (delta < 0) {
 		return Intersection{*this};
 	} else {
-		Intersection i1 = Intersection{(-2*dot_prod + sqrt(delta))/2, false,
-			*this};
-		Intersection i2 = Intersection{(-2*dot_prod - sqrt(delta))/2, true,
-			*this};
+		Intersection i1 =
+			Intersection{(-2*dot_prod + sqrt(delta))/2, false, *this}
+		;
+		Intersection i2 =
+			Intersection{(-2*dot_prod - sqrt(delta))/2, true, *this};
 		// The closest positive intersection is chosen
 		return i1 | i2;
 	}
@@ -28,7 +30,7 @@ Intersection Sphere::Intersect(const Ray &r) const {
 Vector Sphere::Normal(const Point &p) const {
 	Vector direction = p - center_;
 	double distance_to_center_squared = direction.NormSquared();
-	// Gives an "in" normal (directed towards the center) if v is in the sphere,
+	// Gives an "in" normal (directed towards the center) if p is in the sphere,
 	// an "out" normal otherwise.
 	direction.Normalize();
 	if (distance_to_center_squared < radius_*radius_) {
@@ -40,20 +42,22 @@ Vector Sphere::Normal(const Point &p) const {
 
 
 AABB Sphere::BoundingBox() const {
-	Vector offset(radius_, radius_, radius_);
+	Vector offset{radius_, radius_, radius_};
 	return AABB{center_ + offset, center_ - offset};
 }
 
 
 Intersection Plane::Intersect(const Ray &r) const {
 	const Vector &direction = r.Direction();
-	double dot_prod = (direction | normal_);
+	double dot_prod = direction | normal_;
 	if (dot_prod == 0) {
 		// The ray and the plane are parallel
 		return Intersection{*this};
 	} else {
-		return Intersection{-((r.Origin()-point_) | normal_) / dot_prod,
-			(normal_|direction) < 0, *this};
+		return Intersection{
+			-((r.Origin()-point_) | normal_) / dot_prod,
+			(normal_|direction) < 0, *this
+		};
 	}
 }
 
@@ -61,6 +65,7 @@ Intersection Plane::Intersect(const Ray &r) const {
 Vector Plane::Normal(const Point &p) const {
 	Vector normal = normal_;
 	normal.Normalize();
+	// Outputs a well-oriented normal
 	if (((p - point_) | normal) < 0) {
 		return -normal;
 	} else {
@@ -71,6 +76,7 @@ Vector Plane::Normal(const Point &p) const {
 
 
 AABB Plane::BoundingBox() const {
+	// Infinite box
 	double double_inf = std::numeric_limits<double>::infinity();
 	Vector inf(double_inf, double_inf, double_inf);
 	return AABB{-inf, inf};
@@ -106,8 +112,9 @@ Intersection Triangle::Intersect(const Ray &r) const {
 		double t = -((r.Origin()-p1_) | normal_plane_) / dot_prod;
 		Vector barycentric = BarycenticCoordinates(r(t));
 		if (barycentric.x() > 0 && barycentric.y() > 0 && barycentric.z() > 0) {
-			return Intersection{t, (direction|normal_plane_) < 0, barycentric,
-				*this};
+			return Intersection{
+				t, (direction|normal_plane_) < 0, barycentric, *this
+			};
 		} else {
 			return Intersection{*this};
 		}
@@ -140,8 +147,10 @@ AABB Triangle::BoundingBox() const {
 
 Vector Triangle::DiffuseColor(const Point &p) const {
 	if (!HasDiffuseTexture() || !has_uv_coordinates_) {
+		// If no texture can be accessed, uses the material color
 		return material_.DiffuseColor();
 	} else {
+		// Computes the color using UV coordinates
 		float u = p.b1()*u1_ + p.b2()*u2_ + p.b3()*u3_;
 		float v = p.b1()*v1_ + p.b2()*v2_ + p.b3()*v3_;
 		u *= diffuse_texture_->height();
@@ -156,8 +165,10 @@ Vector Triangle::DiffuseColor(const Point &p) const {
 
 Vector Triangle::SpecularColor(const Point &p) const {
 	if (!HasSpecularTexture() || !has_uv_coordinates_) {
+		// If no texture can be accessed, uses the material color
 		return material_.SpecularColor();
 	} else {
+		// Computes the color using UV coordinates
 		float u = p.b1()*u1_ + p.b2()*u2_ + p.b3()*u3_;
 		float v = p.b1()*v1_ + p.b2()*v2_ + p.b3()*v3_;
 		u *= specular_texture_->height();
@@ -170,36 +181,10 @@ Vector Triangle::SpecularColor(const Point &p) const {
 }
 
 
-std::pair<double, double> AABB::XMinMax() const {
-	if (p1_.x() < p2_.x()) {
-		return {p1_.x(), p2_.x()};
-	} else {
-		return {p2_.x(), p1_.x()};
-	}
-}
-
-
-std::pair<double, double> AABB::YMinMax() const {
-	if (p1_.y() < p2_.y()) {
-		return {p1_.y(), p2_.y()};
-	} else {
-		return {p2_.y(), p1_.y()};
-	}
-}
-
-
-std::pair<double, double> AABB::ZMinMax() const {
-	if (p1_.z() < p2_.z()) {
-		return {p1_.z(), p2_.z()};
-	} else {
-		return {p2_.z(), p1_.z()};
-	}
-}
-
-
 Intersection AABB::Intersect(const Ray &r) const {
 	Vector inv_direction = Vector{
-		1/r.Direction().x(), 1/r.Direction().y(), 1/r.Direction().z()};
+		1/r.Direction().x(), 1/r.Direction().y(), 1/r.Direction().z()
+	};
 	double t_x1 = (p1_.x() - r.Origin().x())*inv_direction.x();
 	double t_x2 = (p2_.x() - r.Origin().x())*inv_direction.x();
 	double t_y1 = (p1_.y() - r.Origin().y())*inv_direction.y();

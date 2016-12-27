@@ -1,6 +1,6 @@
 /**
  * \file object_container.hpp
- * \brief Defines classes that deals with sets of objects.
+ * \brief Defines classes representing sets of objects.
  */
 
 #pragma once
@@ -21,9 +21,9 @@ protected:
 
 public:
 	/**
-	 * \fn virtual Intersection Intersect(const Ray &r) const = 0;
+	 * \fn virtual Intersection Intersect(const Ray &r) const = 0
 	 * \brief Computes the closest Intersection with the input Ray to the origin
-	 *        of this Ray, and returns also the corresponding object.
+	 *        of this Ray.
 	 */
 	virtual Intersection Intersect(const Ray &r) const = 0;
 };
@@ -35,12 +35,15 @@ public:
  */
 class ObjectVector : public ObjectContainer {
 private:
-	std::vector<Object> objects_; //!< Objects are stored using this vector.
+	std::vector<Object> objects_; //!< vector used to store objects.
 
 public:
 	/// Constructs an ObjectVector from an iterable containing objects.
 	template <class InputIterator>
-	ObjectVector(InputIterator first, InputIterator last) :
+	ObjectVector(
+		InputIterator first,
+		InputIterator last
+	) :
 		objects_{first, last}
 	{
 	}
@@ -51,7 +54,7 @@ public:
 
 /**
  * \class BVH
- * \brief Bounding Box Hierarchy that determines intersection with objects using
+ * \brief Bounding Volume Hierarchy determining intersection with objects using
  *        bounding boxes and divide-and-conquer heuristics.
  * \remark The tree is assumed to be binary (either a node is a leaf, or it has
  *         two nodes).
@@ -66,13 +69,14 @@ private:
 	Object object_;
 
 	/**
-	 * \fn static bool CompareCentroids(int i, const std::pair<Object, AABB> &o1, const std::pair<Object, AABB> &o2)
-	 * \brief Indicates whether one coordinate i of the bounding box of the
-	 *        first object is stricly lower than the one of the second.
+	 * \fn static bool CompareCentroids(int i, const AABB &o1, const AABB &o2)
+	 * \brief Compares AABBs using their centroid.
 	 * \param i Coordinate to compare.
+	 *
+	 * Indicates whether coordinate i of the first bounding box's centroid
+	 * is stricly lower than the one of the second.
 	 */
-	static bool CompareCentroids(int i, const std::pair<Object, AABB> &o1,
-		const std::pair<Object, AABB> &o2);
+	static bool CompareCentroids(int i, const AABB &o1, const AABB &o2);
 
 public:
 	/// Default constructor.
@@ -80,20 +84,29 @@ public:
 
 	/// Constructs a BVH from an iterable containing objects.
 	template <class InputIterator>
-	BVH(InputIterator first, InputIterator last) {
+	BVH(
+		InputIterator first,
+		InputIterator last
+	) {
 		using namespace std;
-		vector<std::pair<Object, AABB>> objects;
-		for (std::vector<Object>::iterator it=first; it!=last; it++) {
+
+		// Temporary vector containing the objects to store and their AABB
+		vector<pair<Object, AABB>> objects;
+		for (vector<Object>::iterator it=first; it!=last; it++) {
 			objects.push_back({*it, it->BoundingBox()});
 		}
+
+		// Random initialization (uniform distribution over {0, 1, 2})
 		default_random_engine engine = default_random_engine(
-			chrono::high_resolution_clock::now().time_since_epoch().count());
-		uniform_int_distribution<int> distrib =
-			uniform_int_distribution<int>(0, 2);
+			chrono::high_resolution_clock::now().time_since_epoch().count()
+		);
+		uniform_int_distribution<int> distrib{0, 2};
+
+		// Builds the BVH
 		Build(objects.begin(), objects.end(), engine, distrib);
 	}
 
-	/// Indicates if the root node is a leaf (no child).
+	/// Indicates if the root node is a leaf.
 	inline bool IsLeaf() const {
 		return !((child1_) || (child2_));
 	}
@@ -103,11 +116,43 @@ public:
 		return bounding_box_;
 	}
 
+	/**
+	 * \fn Intersection Intersect(const Ray &r) const
+	 * \brief Tests the intersection of the input ray with the set of objects in
+	 *        the BVH.
+	 *
+	 * This method first tests the intersection of the ray with the bounding box
+	 * of the BVH. If it is empty, then the resulting intersection is also
+	 * empty.
+	 *
+	 * Otherwise, if the BVH is a leaf, it returns the intersection with its
+	 * associated object.
+	 *
+	 * Finally, if the BVH is not a leaf, this method computes the intersection
+	 * with its first child. If this intersection arises before the intersection
+	 * with its second child's bounding box, then it is the final intersection;
+	 * otherwise, it also tests the intersection with its second child and
+	 * outputs the closest one.
+	 */
 	Intersection Intersect(const Ray &r) const;
 
-	/// Builds the BVH using objects between first and last.
-	void Build(std::vector<std::pair<Object, AABB>>::iterator first,
+	/**
+	 * \fn void Build(std::vector<std::pair<Object, AABB>>::iterator first, std::vector<std::pair<Object, AABB>>::iterator last, std::default_random_engine &engine, std::uniform_int_distribution<int> &distrib)
+	 * \brief Builds the BVH.
+	 * \param first, last Iterators delimiting the set of objects to store in
+	 *        the BVH (all objects in (first, last]).
+	 * \param engine, distrib Random-related parameters.
+	 *
+	 * If there is only one object, the method creates a leaf.
+	 *
+	 * Otherwise, it divides the set of objects into two parts using a pivot
+	 * repartition with the median (according to a comparison on a random
+ 	 * coordinate), which requires linear time.
+	 */
+	void Build(
+		std::vector<std::pair<Object, AABB>>::iterator first,
 		std::vector<std::pair<Object, AABB>>::iterator last,
 		std::default_random_engine &engine,
-		std::uniform_int_distribution<int> &distrib);
+		std::uniform_int_distribution<int> &distrib
+	);
 };

@@ -15,6 +15,12 @@
 const double PI = 3.14159265358979323846;
 
 
+/**
+ * \fn void show_progress(double progress)
+ * \brief Prints a progress bar on the command line.
+ * \param progress Progress to be showed in the progress bar (assumed to lie
+ *        between 0 and 1).
+ */
 void show_progress(double progress);
 
 
@@ -51,7 +57,7 @@ public:
 	{
 	}
 
-	/// Initiates a Point from another point and a triplet of barycentric
+	/// Initiates a Point from another Point and a triplet of barycentric
 	/// coordinates.
 	Vector(const Vector &p, const Vector &barycentric) :
 		x_{p.x()},
@@ -114,11 +120,11 @@ public:
 	/// Outputs a normalized orthogonal vector to the Vector.
 	Vector Orthogonal() const {
 		if (x_ != 0 || y_ != 0) {
-			Vector result(y_, -x_, 0);
+			Vector result{y_, -x_, 0};
 			result.Normalize();
 			return result;
 		} else {
-			return Vector(1, 0, 0);
+			return Vector{1, 0, 0};
 		}
 	}
 
@@ -152,7 +158,7 @@ public:
 		return Vector{x_-v.x(), y_-v.y(), z_-v.z()};
 	}
 
-	/// Multiplication component by component.
+	/// Multiplication component by component of two Vectors.
 	Vector operator*(const Vector &v) const {
 		return Vector{x_*v.x(), y_*v.y(), z_*v.z()};
 	}
@@ -162,12 +168,12 @@ public:
 		return x_*v.x() + y_*v.y() + z_*v.z();
 	}
 
-	/// Cross product with another Vector.
+	/// Cross product of two Vectors.
 	Vector operator^(const Vector &v) const {
 		return Vector{y_*v.z()-z_*v.y(), z_*v.x()-x_*v.z(), x_*v.y()-y_*v.x()};
 	}
 
-	/// Outputs the Vector.
+	/// Outputs the Vector in a I/O stream.
 	friend std::ostream & operator<<(std::ostream &out, const Vector &v) {
 		out << "(" << v.x() << ", " << v.y() << ", " << v.z() << ")";
 		return out;
@@ -187,7 +193,7 @@ typedef Vector Point;
 class Ray {
 private:
 	const Point origin_; //!< Source point of the Ray.
-	Vector direction_;   //!< Direction of the Ray; assumed to be normalized.
+	Vector direction_;   //!< Direction of the Ray, assumed to be normalized.
 
 public:
 	/// Constructs a Ray from its origin and a direction.
@@ -212,8 +218,9 @@ public:
 	 * \fn Point operator()(double t) const
 	 * \brief Gives the point on the Ray at a given distance of the origin.
 	 *
-	 * A small espilon is substracted from the given distance to get a point
-	 * that is "before" the intersection.
+	 * A small espilon is takes awau from the given distance to get a point
+	 * that is "right before" the intersection, in order to eliminate noise
+	 * in rendered images.
 	 */
 	inline Point operator()(double t) const {
 		return origin_ + (t*0.999999)*direction_;
@@ -223,6 +230,7 @@ public:
 
 class RawObject;
 
+
 /**
  * \class Intersection
  * \brief Represents an intersection point, or the empty set.
@@ -231,22 +239,32 @@ class Intersection {
 private:
 	bool exists_; //!< Indicates if there is an intersection.
 
-	/// Distance on the ray from its origin for which the intersection point is
-	/// reached. Assumed to be non-negative.
+	/**
+	 * \brief Distance on the ray from its origin for which the intersection
+	 *        point is reached.
+	 *
+	 * Assumed to be non-negative, and positive if the intersection is
+	 * not empty.
+	 */
 	double t_;
 
-	bool out_; //!< Indicates if the intersection happens out of the object.
+	/// Indicates if the intersection arises from the exterior of the object.
+	bool out_;
 
 	/// Barycentric coordinates corresponding to the intersection point's
 	/// triangle, if relevant.
-	Vector barycentric_; //!< Barycentric
+	Vector barycentric_;
 
-	/// Object corresponding to the intersection.
+	/// Object corresponding to the tested intersection.
 	std::reference_wrapper<const RawObject> object_;
 
 public:
-	/// Creates an empty Intersection.
-	Intersection(std::reference_wrapper<const RawObject> object) :
+	/**
+	 * \fn Intersection(const std::reference_wrapper<const RawObject> &object)
+	 * \brief Creates an empty Intersection.
+	 * \param object Object with which the intersection was tested.
+	 */
+	Intersection(const std::reference_wrapper<const RawObject> &object) :
 		exists_{false},
 		t_{0},
 		out_{false},
@@ -255,18 +273,21 @@ public:
 	}
 
 	/**
-	 * \fn Intersection(double t, bool out, std::reference_wrapper<const RawObject> object)
+	 * \fn Intersection(double t, bool out, const std::reference_wrapper<const RawObject> &object)
 	 * \brief Creates an Intersection using the given ray parameter.
 	 * \param t Ray parameter at which the ray reached the intersection point,
-	 *          i.e. the latter is at distance t from the origin, following the
-	 *          ray direction.
-	 * \param out Indicates if the intersection happens out of the object.
-	 * \param object Object to which the intersection is tested.
-	 *
-	 * If the input parameter is non-positive, then the Intersection is empty.
+	 *        i.e. the latter is at distance t from the origin, following the
+	 *        ray direction.
+	 * \param out Indicates if the intersection arises from the exterior of the
+	 *        object.
+	 * \param object Object corresponding to the intersection.
+	 * \note If the input parameter is non-positive, then the Intersection is
+	 * considered to be empty.
 	 */
-	Intersection(double t, bool out,
-		std::reference_wrapper<const RawObject> object
+	Intersection(
+		double t,
+		bool out,
+		const std::reference_wrapper<const RawObject> &object
 	) :
 		exists_{t > 0},
 		t_{std::max(t, 0.)},
@@ -277,8 +298,12 @@ public:
 
 	/// Builds an Intersection using the barycentric coordinates of the
 	/// intersection point.
-	Intersection(double t, bool out, const Vector &barycentric,
-		std::reference_wrapper<const RawObject> object
+	/// \see Intersection(double t, bool out, std::reference_wrapper<const RawObject> object)
+	Intersection(
+		double t,
+		bool out,
+		const Vector &barycentric,
+		const std::reference_wrapper<const RawObject> &object
 	) :
 		exists_{t > 0},
 		t_{std::max(t, 0.)},
@@ -296,13 +321,13 @@ public:
 	/**
 	 * \fn double Distance() const
 	 * \brief Outputs the ray parameter corresponding to the intersection point.
-	 * \remark Has no relevance if the Intersection is empty.
+	 * \remark Is not relevant if the Intersection is empty.
 	 */
 	inline double Distance() const {
 		return t_;
 	}
 
-	/// Indicates if the intersection happens out of the object.
+	/// Indicates if the intersection arises from the exterior of the object.
 	inline bool IsOut() const {
 		return out_;
 	}
@@ -313,14 +338,15 @@ public:
 		return barycentric_;
 	}
 
-	/// Outputs the object corresponding to the Intersection.
-	inline std::reference_wrapper<const RawObject> Object() const {
+	/// Outputs a reference to the object corresponding to the Intersection.
+	inline const std::reference_wrapper<const RawObject>& Object() const {
 		return object_;
 	}
 
 	/**
 	 * \fn Intersection operator|(const Intersection &inter) const
 	 * \brief Join operator on Intersections.
+	 * \note Only relevant for intersections corresponding to the same ray.
 	 *
 	 * Chooses the closest Intersection to the origin point.
 	 */
@@ -328,7 +354,8 @@ public:
 		if (IsEmpty()) {
 			return Intersection{
 				inter.Distance(), inter.IsOut(), inter.BarycentricCoordinates(),
-				inter.Object()};
+				inter.Object()
+			};
 		} else if (inter.IsEmpty()) {
 			return Intersection{t_, out_, barycentric_, object_};
 		} else {
@@ -337,7 +364,8 @@ public:
 			} else {
 				return Intersection{
 					inter.Distance(), inter.IsOut(),
-					inter.BarycentricCoordinates(), inter.Object()};
+					inter.BarycentricCoordinates(), inter.Object()
+				};
 			}
 		}
 	}
