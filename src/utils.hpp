@@ -30,6 +30,12 @@ private:
 	double y_; //!< Second coordinate.
 	double z_; //!< Third coordinate.
 
+	/// First barycentric coordinate corresponding to this point's triangle, if
+	/// relevant.
+	double b1_ = 1;
+	double b2_ = 0; //!< Second barycentric coordinate.
+	double b3_ = 0; //!< Third barycentric coordinate.
+
 public:
 	/// Initiates a Vector as the origin \f$\left(0,0,0\right)\f$.
 	Vector() :
@@ -45,19 +51,46 @@ public:
 	{
 	}
 
+	/// Initiates a Point from another point and a triplet of barycentric
+	/// coordinates.
+	Vector(const Vector &p, const Vector &barycentric) :
+		x_{p.x()},
+		y_{p.y()},
+		z_{p.z()},
+		b1_{barycentric.x()},
+		b2_{barycentric.y()},
+		b3_{barycentric.z()}
+	{
+	}
+
 	/// Returns the first coordinate of the Vector.
-	const double& x() const {
+	inline const double& x() const {
 		return x_;
 	}
 
 	/// Returns the second coordinate of the Vector.
-	const double& y() const {
+	inline const double& y() const {
 		return y_;
 	}
 
 	/// Returns the third coordinate of the Vector.
-	const double& z() const {
+	inline const double& z() const {
 		return z_;
+	}
+
+	/// Returns the first barycentric coordinate of the Point.
+	inline const double& b1() const {
+		return b1_;
+	}
+
+	/// Returns the second barycentric coordinate of the Point.
+	inline const double& b2() const {
+		return b2_;
+	}
+
+	/// Returns the third barycentric coordinate of the Point.
+	inline const double& b3() const {
+		return b3_;
 	}
 
 	/// Normalizes the Vector with a unitary norm.
@@ -69,12 +102,12 @@ public:
 	}
 
 	/// Returns the squared norm of the Vector.
-	double NormSquared() const {
+	inline double NormSquared() const {
 		return x_*x_ + y_*y_ + z_*z_;
 	}
 
 	/// Returns the norm of the Vector.
-	double Norm() const {
+	inline double Norm() const {
 		return sqrt(NormSquared());
 	}
 
@@ -153,8 +186,8 @@ typedef Vector Point;
  */
 class Ray {
 private:
-	const Point origin_;   //!< Source point of the Ray.
-	Vector direction_;     //!< Direction of the Ray; assumed to be normalized.
+	const Point origin_; //!< Source point of the Ray.
+	Vector direction_;   //!< Direction of the Ray; assumed to be normalized.
 
 public:
 	/// Constructs a Ray from its origin and a direction.
@@ -166,12 +199,12 @@ public:
 	}
 
 	/// Returns the source of the Ray.
-	const Point& Origin() const {
+	inline const Point& Origin() const {
 		return origin_;
 	}
 
 	/// Returns the normalized direction of the Ray.
-	const Vector& Direction() const {
+	inline const Vector& Direction() const {
 		return direction_;
 	}
 
@@ -182,7 +215,7 @@ public:
 	 * A small espilon is substracted from the given distance to get a point
 	 * that is "before" the intersection.
 	 */
-	Point operator()(double t) const {
+	inline Point operator()(double t) const {
 		return origin_ + (t*0.999999)*direction_;
 	}
 };
@@ -204,7 +237,12 @@ private:
 
 	bool out_; //!< Indicates if the intersection happens out of the object.
 
-	std::reference_wrapper<const RawObject> object_; //!< Object corresponding to the intersection.
+	/// Barycentric coordinates corresponding to the intersection point's
+	/// triangle, if relevant.
+	Vector barycentric_; //!< Barycentric
+
+	/// Object corresponding to the intersection.
+	std::reference_wrapper<const RawObject> object_;
 
 public:
 	/// Creates an empty Intersection.
@@ -237,8 +275,21 @@ public:
 	{
 	}
 
+	/// Builds an Intersection using the barycentric coordinates of the
+	/// intersection point.
+	Intersection(double t, bool out, const Vector &barycentric,
+		std::reference_wrapper<const RawObject> object
+	) :
+		exists_{t > 0},
+		t_{std::max(t, 0.)},
+		out_{out},
+		barycentric_{barycentric},
+		object_{object}
+	{
+	}
+
 	/// Indicates if the Intersection is empty.
-	bool IsEmpty() const {
+	inline bool IsEmpty() const {
 		return !exists_;
 	}
 
@@ -247,17 +298,23 @@ public:
 	 * \brief Outputs the ray parameter corresponding to the intersection point.
 	 * \remark Has no relevance if the Intersection is empty.
 	 */
-	double Distance() const {
+	inline double Distance() const {
 		return t_;
 	}
 
 	/// Indicates if the intersection happens out of the object.
-	bool IsOut() const {
+	inline bool IsOut() const {
 		return out_;
 	}
 
+	/// Returns the barycentric coordinates associated to the intersection
+	/// point.
+	inline const Vector& BarycentricCoordinates() const {
+		return barycentric_;
+	}
+
 	/// Outputs the object corresponding to the Intersection.
-	std::reference_wrapper<const RawObject> Object() const {
+	inline std::reference_wrapper<const RawObject> Object() const {
 		return object_;
 	}
 
@@ -270,15 +327,17 @@ public:
 	Intersection operator|(const Intersection &inter) const {
 		if (IsEmpty()) {
 			return Intersection{
-				inter.Distance(), inter.IsOut(), inter.Object()};
+				inter.Distance(), inter.IsOut(), inter.BarycentricCoordinates(),
+				inter.Object()};
 		} else if (inter.IsEmpty()) {
-			return Intersection{t_, out_, object_};
+			return Intersection{t_, out_, barycentric_, object_};
 		} else {
 			if (t_ < inter.Distance()) {
-				return Intersection{t_, out_, object_};
+				return Intersection{t_, out_, barycentric_, object_};
 			} else {
 				return Intersection{
-					inter.Distance(), inter.IsOut(), inter.Object()};
+					inter.Distance(), inter.IsOut(),
+					inter.BarycentricCoordinates(), inter.Object()};
 			}
 		}
 	}

@@ -9,6 +9,7 @@
 #include <memory>
 #include <random>
 #include <chrono>
+#include "CImg.h"
 #include "utils.hpp"
 #include "material.hpp"
 
@@ -46,13 +47,25 @@ public:
 	/// Outputs a bounding box of the object as an AABB.
 	virtual AABB BoundingBox() const = 0;
 
+	/// Outputs the diffuse color of the object at the input point. By default,
+	/// corresponds to the material's diffuse color.
+	virtual Vector DiffuseColor(const Point &p) const {
+		return material_.DiffuseColor();
+	}
+
+	/// Outputs the speculat color of the object at the input point. By default,
+	/// corresponds to the material's specular color.
+	virtual Vector SpecularColor(const Point &p) const {
+		return material_.SpecularColor();
+	}
+
 	/// Outputs the Material of the object.
-	const Material& ObjectMaterial() const {
+	inline const Material& ObjectMaterial() const {
 		return material_;
 	}
 
 	/// Indicates if the object has null volume (if is not empty).
-	bool IsFlat() const {
+	inline bool IsFlat() const {
 		return is_flat_;
 	}
 };
@@ -70,7 +83,7 @@ private:
 public:
 	/// Creates a sphere with given radius and center.
 	Sphere(double radius, const Point &center,
-		const Material &material=Material()
+		const Material &material=Material{}
 	) :
 		RawObject{material, false},
 		radius_{radius},
@@ -116,7 +129,8 @@ public:
 
 /**
  * \class Triangle
- * \brief Triangle object, defines by three points.
+ * \brief Triangle object, defines by three points, possibly associated with a
+ *        texture.
  *
  * \remark The normals defined at each vertex of the Triangle should point to
  *         the same half-space.
@@ -135,6 +149,20 @@ private:
 	const Vector normal2_; //!< Normal of the triangle of the second vertex.
 	const Vector normal3_; //!< Normal of the triangle of the third vertex.
 
+	/// Diffuse texture associated to this triangle.
+	const std::shared_ptr<cimg_library::CImg<unsigned char>> diffuse_texture_;
+
+	/// Specular texture associated to this triangle.
+	const std::shared_ptr<cimg_library::CImg<unsigned char>> specular_texture_;
+
+	const bool has_uv_coordinates_; //!< Shows the validity of UV coordinates.
+	const float u1_; //!< First UV coordinate associated to p1_.
+	const float v1_; //!< Second UV coordinate associated to p1_.
+	const float u2_; //!< First UV coordinate associated to p2_.
+	const float v2_; //!< Second UV coordinate associated to p2_.
+	const float u3_; //!< First UV coordinate associated to p3_.
+	const float v3_; //!< Second UV coordinate associated to p3_.
+
 	/**
 	 * \fn Vector BarycenticCoordinates(const Point &p) const
 	 * \brief Computes the barycentric coordinates of the input point.
@@ -142,31 +170,22 @@ private:
 	 * \return A Vector \f$\lambda_1, \lambda_2, \lambda_3\f$ of the barycentric
 	 *         coordinates of, respectively, the first, second and third vertex.
 	 */
-	 Vector BarycenticCoordinates(const Point &p) const;
+	Vector BarycenticCoordinates(const Point &p) const;
 
 public:
 	/// Creates a Triangle from its three vertices, assumed to be pairwise
-	/// distinct, using the normal of their embedding plane.
-	Triangle(const Point &p1, const Point &p2, const Point &p3,
-		const Material &material=Material()
-	) :
-		RawObject{material, true},
-		p1_{p1},
-		p2_{p2},
-		p3_{p3},
-		normal_plane_{(p2-p1)^(p3-p1)},
-		normal1_{normal_plane_},
-		normal2_{normal_plane_},
-		normal3_{normal_plane_}
-	{
-		normal_plane_.Normalize();
-	}
-
-	/// Creates a Triangle from its three vertices, assumed to be pairwise
-	/// distinct, using a given normal per vertex (assumed to be normalized)
+	/// distinct, using a given normal per vertex (assumed to be normalized).
 	Triangle(const Point &p1, const Point &p2, const Point &p3,
 		const Vector &normal1, const Vector &normal2, const Vector &normal3,
-		const Material &material=Material()
+		const std::shared_ptr<
+			cimg_library::CImg<unsigned char>
+		> &diffuse_texture,
+		const std::shared_ptr<
+			cimg_library::CImg<unsigned char>
+		> &specular_texture,
+		bool has_uv_coordinates,
+		float u1, float v1, float u2, float v2, float u3, float v3,
+		const Material &material=Material{}
 	) :
 		RawObject{material, true},
 		p1_{p1},
@@ -175,7 +194,16 @@ public:
 		normal_plane_{(p2-p1)^(p3-p1)},
 		normal1_{normal1},
 		normal2_{normal2},
-		normal3_{normal3}
+		normal3_{normal3},
+		diffuse_texture_{diffuse_texture},
+		specular_texture_{specular_texture},
+		has_uv_coordinates_{has_uv_coordinates},
+		u1_{u1},
+		v1_{v1},
+		u2_{u2},
+		v2_{v2},
+		u3_{u3},
+		v3_{v3}
 	{
 		normal_plane_.Normalize();
 		if ((normal_plane_ | normal1) < 0) {
@@ -183,11 +211,39 @@ public:
 		}
 	}
 
+	/// Indicates if this triangle is associated with a diffuse texture.
+	inline bool HasDiffuseTexture() const {
+		return static_cast<bool>(diffuse_texture_);
+	}
+
+	/// Indicates if this triangle is associated with a specular texture.
+	inline bool HasSpecularTexture() const {
+		return static_cast<bool>(specular_texture_);
+	}
+
 	Intersection Intersect(const Ray &r) const;
 
+	/// \note The input point should contain the barycentric coordinates
+	///       corresponding to this Triangle.
 	Vector Normal(const Point &p) const;
 
 	AABB BoundingBox() const;
+
+	/**
+	 * \fn Vector DiffuseColor(const Point &p) const
+	 * \brief Computes the diffuse color of the triangle at a given point.
+	 * \note The input point should contain the barycentric coordinates
+ 	 *       corresponding to this Triangle.
+	 */
+	Vector DiffuseColor(const Point &p) const;
+
+	/**
+	 * \fn Vector SpecularColor(const Point &p) const
+	 * \brief Computes the specular color of the triangle at a given point.
+	 * \note The input point should contain the barycentric coordinates
+ 	 *       corresponding to this Triangle.
+	 */
+	Vector SpecularColor(const Point &p) const;
 };
 
 
@@ -228,14 +284,22 @@ public:
 	std::pair<double, double> ZMinMax() const;
 
 	/// Outputs the centroid of the box.
-	Point Centroid() const;
+	inline Point Centroid() const {
+		return Point(
+			(p1_.x() + p2_.x())/2,
+			(p1_.y() + p2_.y())/2,
+			(p1_.z() + p2_.z())/2
+		);
+	}
 
 	Intersection Intersect(const Ray &r) const;
 
 	/// \warning Does not return the normal of the object. Should not be used.
 	Vector Normal(const Point &p) const;
 
-	AABB BoundingBox() const;
+	inline AABB BoundingBox() const {
+		return AABB{*this};
+	}
 
 	/// Bounding box of two AABBs.
 	AABB operator||(const AABB &aabb) const;
@@ -290,27 +354,27 @@ public:
 	}
 
 	/// Outputs the Material of the object.
-	const Material& ObjectMaterial() const {
+	inline const Material& ObjectMaterial() const {
 		return raw_object_->ObjectMaterial();
 	}
 
 	/// Indicates if the object has null volume (if is not empty).
-	bool IsFlat() const {
+	inline bool IsFlat() const {
 		return raw_object_->IsFlat();
 	}
 
 	/// Intersection primitive of the contained object.
-	Intersection Intersect(const Ray &r) const {
+	inline Intersection Intersect(const Ray &r) const {
 		return raw_object_->Intersect(r);
 	}
 
 	/// Computes the normal unitary vector to the object at the given point.
-	Vector Normal(const Vector &p) const {
+	inline Vector Normal(const Vector &p) const {
 		return raw_object_->Normal(p);
 	}
 
 	/// Outputs a bounding box of the object as an AABB.
-	AABB BoundingBox() const {
+	inline AABB BoundingBox() const {
 		return raw_object_->BoundingBox();
 	}
 

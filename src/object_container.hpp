@@ -94,12 +94,12 @@ public:
 	}
 
 	/// Indicates if the root node is a leaf (no child).
-	bool IsLeaf() const {
+	inline bool IsLeaf() const {
 		return !((child1_) || (child2_));
 	}
 
 	/// Outputs the bounding box of the container.
-	const AABB& BoundingBox() const {
+	inline const AABB& BoundingBox() const {
 		return bounding_box_;
 	}
 

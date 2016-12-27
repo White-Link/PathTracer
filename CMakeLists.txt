@@ -40,7 +40,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CIMG_CFLAGS}")
 find_package(assimp REQUIRED)
 
 
-
 # Source files
 file(GLOB SOURCES src/*)
 

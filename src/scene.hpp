@@ -45,12 +45,12 @@ public:
 	}
 
 	/// Outputs the height of the final image.
-	size_t Height() const {
+	inline size_t Height() const {
 		return height_;
 	}
 
 	/// Outputs the width of the final image.
-	size_t Width() const {
+	inline size_t Width() const {
 		return width_;
 	}
 
@@ -84,12 +84,12 @@ public:
 	}
 
 	/// Outputs the source point of the Light.
-	const Point& Source() const {
+	inline const Point& Source() const {
 		return source_;
 	}
 
 	/// Outputs the (R,G,B) intensity of the Light.
-	Vector Intensity() const {
+	inline const Vector& Intensity() const {
 		return intensity_;
 	}
 };
@@ -113,30 +113,25 @@ private:
 	std::uniform_real_distribution<double> distrib_
 		= std::uniform_real_distribution<double>{0, 1};
 
-	/// Computes the intensity of the light at a given point, given a normal to
-	/// this point.
+	/// Computes the intensity given by the lights at a given point, given a
+	/// normal to this point (properly coefficiented).
 	Vector LightIntensity(const Point &p, const Vector &normal,
-		const Light &light, const Ray &r, const Material &material,
+		const Ray &r, const Material &material, const Vector &diffuse_color,
+		const Vector &specular_color, double opacity,
 		double fraction_diffuse_brdf) const;
 
-	/// Computes the fraction of the color that is due to diffusion of light
-	/// accross the Scene, using parameters computed in GetColor.
+	/// Computes the color that is due to diffusion of light accross the Scene,
+	/// using parameters computed in GetColor.
 	Vector GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
-		double fraction_diffuse_brdf, const Material &material,
-		const Vector &normal, const Point &intersection_point, double index,
-		double intensity);
-
-	/// Computes the color that is due to illumination or BRDF.
-	Vector GetDiffuseColor(unsigned int nb_samples, const Ray &r,
-		unsigned int nb_recursions, double fraction_diffuse_brdf,
-		const Material &material, const Vector &normal,
+		const Vector &diffuse_color, const Vector &normal,
 		const Point &intersection_point, double index, double intensity);
 
 	/// Computes the fraction of the color that is due reflection or refraction.
 	Vector GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 		const Point &intersection_point, const Material &material,
-		const Intersection &inter, double index, const Vector &normal,
-		unsigned int nb_samples, unsigned int nb_recursions, double intensity);
+		const Vector &specular_color, const Intersection &inter, double index,
+		const Vector &normal, unsigned int nb_samples,
+		unsigned int nb_recursions, double intensity);
 
 	/**
 	 * \fn Vector GetColor(const Ray &r, unsigned int nb_recursions, unsigned int nb_samples=1, double index=1, double intensity=1)
@@ -171,27 +166,27 @@ public:
 	}
 
 	/// Adds the input Light to the scene.
-	void AddLight(const Light &light) {
+	inline void AddLight(const Light &light) {
 		lights_.push_back(light);
 	}
 
 	/// Sets the gamma correction.
-	void SetGamma(double gamma) {
+	inline void SetGamma(double gamma) {
 		gamma_ = gamma;
 	}
 
 	/// Outputs the current camera.
-	const Camera& GetCamera() const {
+	inline const Camera& GetCamera() const {
 		return camera_;
 	}
 
 	/// Outputs the height of the final image.
-	size_t Height() const {
+	inline size_t Height() const {
 		return camera_.Height();
 	}
 
 	/// Outputs the width of the final image.
-	size_t Width() const {
+	inline size_t Width() const {
 		return camera_.Width();
 	}
 

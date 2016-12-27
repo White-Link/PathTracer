@@ -3,7 +3,6 @@
  * \brief Implements classes of scene.hpp.
  */
 
-#include "CImg.h"
 #include "scene.hpp"
 
 
@@ -17,51 +16,61 @@ Ray Camera::Launch(size_t i, size_t j, double di, double dj) {
 
 
 Vector Scene::LightIntensity(const Point &p, const Vector &normal,
-	const Light &light, const Ray &r, const Material &material,
-	double fraction_diffuse_brdf) const
+	const Ray &r, const Material &material, const Vector &diffuse_color,
+	const Vector &specular_color, double opacity, double fraction_diffuse_brdf)
+const
 {
-	Vector direction_light = light.Source() - p;
-	// Check if an object blocks the light
-	// Throw a ray towards the light
-	Ray to_light{p, direction_light};
-	Intersection inter_light = objects_->Intersect(to_light);
-	double d = inter_light.Distance();
-	// If an object is between the light and the intersection point,
-	// then the color is dark
-	if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
-		Vector color_light;
-		// Diffuse part
-		double dd = direction_light.NormSquared();
-		color_light = color_light
-			+ std::max(to_light.Direction()|normal, 0.) * light.Intensity()
-			* (1-fraction_diffuse_brdf) / (PI * dd)
-			* material.DiffuseColor();
-
-		// Specular part
-		if (material.FractionSpecular() != 0) {
-			direction_light.Normalize();
-			Vector direction_light_reflected = direction_light
-				- 2*(direction_light|normal)*normal;
-			direction_light_reflected.Normalize();
-			color_light = color_light + material.FractionSpecular()
-				* pow(std::max(-direction_light_reflected|r.Direction(), 0.),
-					material.SpecularCoefficient())
-				* light.Intensity() * material.SpecularColor() / (PI * dd);
-		}
-
-		return color_light;
+	if (opacity*(1-fraction_diffuse_brdf) == 0
+		&& material.SpecularCoefficient() == 0)
+	{
+		return Vector{0, 0, 0};
 	}
 
-	return Vector{0, 0, 0};
+	Vector final_color;
+
+	// Traverses the set of lights
+	for (const auto &l : lights_) {
+		// Throw a ray towards the light
+		Vector direction_light = l.Source() - p;
+		Ray to_light{p, direction_light};
+		Intersection inter_light = objects_->Intersect(to_light);
+		double d = inter_light.Distance();
+		// If an object is between the light and the intersection point,
+		// then the color is dark
+		if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
+			Vector color_light;
+			// Diffuse part
+			double dd = direction_light.NormSquared();
+			color_light = color_light
+				+ std::max(to_light.Direction()|normal, 0.) * l.Intensity()
+				* opacity*(1-fraction_diffuse_brdf) / (PI * dd)
+				* diffuse_color;
+
+			// Specular part
+			if (material.FractionSpecular() != 0) {
+				direction_light.Normalize();
+				Vector direction_light_reflected = direction_light
+					- 2*(direction_light|normal)*normal;
+				direction_light_reflected.Normalize();
+				color_light = color_light + material.FractionSpecular()
+					* pow(std::max(direction_light_reflected|r.Direction(),
+							0.),
+						material.SpecularCoefficient())
+					* l.Intensity() * specular_color / (PI * dd);
+			}
+
+			final_color = final_color + color_light;
+		}
+	}
+
+	return final_color;
 }
 
 
 Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
-	double fraction_diffuse_brdf, const Material &material,
-	const Vector &normal, const Point &intersection_point, double index,
-	double intensity)
+	const Vector &diffuse_color, const Vector &normal,
+	const Point &intersection_point, double index, double intensity)
 {
-	double coef = fraction_diffuse_brdf / PI;
 	Vector result;
 	Vector ortho1 = normal.Orthogonal();
 	Vector ortho2 = normal^ortho1;
@@ -73,41 +82,17 @@ Vector Scene::GetBRDFColor(unsigned int nb_samples, unsigned int nb_recursions,
 			+ sin(2*PI*r1)*root*ortho2 + sqrt(r2)*normal;
 		result = result +
 			GetColor(Ray{intersection_point, random_direction},
-				nb_recursions-1, 1, index, intensity*coef);
+				nb_recursions-1, 1, index, intensity);
 	}
-	return coef * result / nb_samples * material.DiffuseColor();
-}
-
-
-Vector Scene::GetDiffuseColor(unsigned int nb_samples, const Ray &r,
-	unsigned int nb_recursions, double fraction_diffuse_brdf,
-	const Material &material, const Vector &normal,
-	const Point &intersection_point, double index, double intensity)
-{
-	// Diffuse and specular color
-	Vector diffuse_color;
-	for (const auto &l : lights_) {
-		Vector color = LightIntensity(intersection_point, normal, l, r,
-			material, fraction_diffuse_brdf);
-		diffuse_color = diffuse_color + color;
-	}
-
-	// Diffusion
-	if (nb_recursions != 0 && fraction_diffuse_brdf != 0 && nb_samples != 0)
-	{
-		diffuse_color = diffuse_color +
-			GetBRDFColor(nb_samples, nb_recursions, fraction_diffuse_brdf,
-				material, normal, intersection_point, index, intensity);
-	}
-
-	return diffuse_color;
+	return result / (nb_samples * PI) * diffuse_color;
 }
 
 
 Vector Scene::GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 	const Point &intersection_point, const Material &material,
-	const Intersection &inter, double index, const Vector &normal,
-	unsigned int nb_samples, unsigned int nb_recursions, double intensity)
+	const Vector &specular_color, const Intersection &inter, double index,
+	const Vector &normal, unsigned int nb_samples, unsigned int nb_recursions,
+	double intensity)
 {
 	Vector refracted_direction, reflected_direction;
 	const Vector &ray_dir = r.Direction();
@@ -150,25 +135,29 @@ Vector Scene::GetTransmissionReflexionColor(const Ray &r, const RawObject &o,
 	}
 
 	Vector final_color;
-	if (coef_reflection == 1) {
-		final_color = GetColor(Ray{intersection_point, reflected_direction},
-			nb_recursions-1, nb_samples, index, intensity);
-	} else if (coef_reflection == 0) {
-		final_color = GetColor(
-			Ray{r(inter.Distance()*1.0001), refracted_direction},
-			nb_recursions-1, nb_samples, new_index, intensity);
+	if (coef_reflection >= 0.999) {
+		final_color = specular_color *
+			GetColor(
+				Ray{intersection_point, reflected_direction}, nb_recursions-1,
+				nb_samples, index, intensity);
+	} else if (coef_reflection <= 0.001) {
+		final_color = material.TransparentColor() *
+			GetColor(
+				Ray{r(inter.Distance()*1.0001), refracted_direction},
+				nb_recursions-1, nb_samples, new_index, intensity);
 	} else {
 		for (unsigned int i=0; i<nb_samples; i++) {
 			double p = distrib_(engine_);
 			if (p <= coef_reflection) {
-				final_color = final_color + GetColor(
+				final_color = final_color + specular_color * GetColor(
 					Ray{intersection_point, reflected_direction},
 					nb_recursions-1, 1, index, coef_reflection*intensity);
 			} else {
-				final_color = final_color + GetColor(
-					Ray{r(inter.Distance()*1.0001), refracted_direction},
-					nb_recursions-1, 1, new_index,
-					(1-coef_reflection)*intensity);
+				final_color = final_color + material.TransparentColor()
+					* GetColor(
+						Ray{r(inter.Distance()*1.0001), refracted_direction},
+						nb_recursions-1, 1, new_index,
+						(1-coef_reflection)*intensity);
 			}
 		}
 		if (nb_samples != 0) {
@@ -185,55 +174,76 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	// Check first the intersection with the objects of the scene
 	Intersection inter = objects_->Intersect(r);
 
-	if (inter.IsEmpty() || intensity < 0.002) {
+	if (inter.IsEmpty() || intensity < 0.01) {
 		// No intersection
 		return Vector{0, 0, 0};
 	}
 
 	const RawObject &o = inter.Object();
 	const Material &material = o.ObjectMaterial();
-	Point intersection_point = r(inter.Distance());
+	Point intersection_point = Point(r(inter.Distance()),
+		inter.BarycentricCoordinates());
 	Vector normal = o.Normal(intersection_point);
 
-	double fraction_diffuse;
+	double opacity;
 	double fraction_diffuse_brdf;
 	if (nb_recursions == 0 || nb_samples == 0) {
-		fraction_diffuse = 1;
+		opacity = 1;
 		fraction_diffuse_brdf = 0;
 	} else {
-		fraction_diffuse = material.FractionDiffuse();
+		opacity = material.Opacity();
 		fraction_diffuse_brdf = material.FractionDiffuseBRDF();
 	}
 
+	Vector diffuse_color;
+	Vector specular_color;
+	if (opacity != 0) {
+		diffuse_color = o.DiffuseColor(intersection_point);
+	}
+	if (material.FractionSpecular() != 0) {
+		specular_color = o.SpecularColor(intersection_point);
+	}
+
 	Vector final_color;
-	// Sampling between diffuse and reflection / transmission
-	if (fraction_diffuse == 1) {
-		final_color =
-			GetDiffuseColor(nb_samples, r, nb_recursions, fraction_diffuse_brdf,
-				material, normal, intersection_point, index, intensity);
-	} else if (fraction_diffuse == 0) {
-		final_color =
-			GetTransmissionReflexionColor(r, o, intersection_point, material,
-				inter, index, normal, nb_samples, nb_recursions, intensity);
-	} else {
-		for (unsigned int i=0; i<nb_samples; i++) {
-			double p = distrib_(engine_);
-			if (p <= fraction_diffuse) {
-				final_color = final_color +
-					GetDiffuseColor(1, r, nb_recursions,
-						fraction_diffuse_brdf, material, normal,
-						intersection_point, index, fraction_diffuse*intensity);
-			} else {
-				final_color = final_color +
-					GetTransmissionReflexionColor(r, o, intersection_point,
-						material, inter, index, normal, 1, nb_recursions,
-						(1-fraction_diffuse)*intensity);
+	if (opacity != 1 || fraction_diffuse_brdf != 0) {
+		// Sampling between diffusion and reflection / transmission
+		double fraction_diffusion =
+			opacity*fraction_diffuse_brdf
+				/ (1 - opacity*(1-fraction_diffuse_brdf));
+		if (fraction_diffusion >= 0.999) {
+			final_color =
+				GetBRDFColor(nb_samples, nb_recursions, diffuse_color, normal,
+					intersection_point, index,
+					opacity * fraction_diffuse_brdf * intensity);
+		} else if (fraction_diffusion <= 0.001) {
+			final_color =
+				GetTransmissionReflexionColor(r, o, intersection_point,
+					material, specular_color, inter, index, normal, nb_samples,
+					nb_recursions, (1-opacity) * intensity);
+		} else {
+			for (unsigned int i=0; i<nb_samples; i++) {
+				double p = distrib_(engine_);
+				if (p <= fraction_diffusion) {
+					final_color = final_color +
+						GetBRDFColor(1, nb_recursions, diffuse_color, normal,
+							intersection_point, index,
+							opacity*fraction_diffuse_brdf*intensity);
+				} else {
+					final_color = final_color +
+						GetTransmissionReflexionColor(r, o, intersection_point,
+							material, specular_color, inter, index, normal, 1,
+							nb_recursions, (1-opacity)*intensity);
+				}
+			}
+			if (nb_samples != 0) {
+				final_color = final_color / nb_samples;
 			}
 		}
-		if (nb_samples != 0) {
-			final_color = final_color / nb_samples;
-		}
 	}
+
+	final_color = (1-opacity*(1-fraction_diffuse_brdf)) * final_color
+		+ LightIntensity(intersection_point, normal, r,	material, diffuse_color,
+			specular_color, opacity, fraction_diffuse_brdf);
 
 	return final_color;
 }
@@ -286,6 +296,7 @@ void Scene::Render(unsigned int nb_recursions, unsigned int nb_samples,
 	}
 	std::cout << std::endl;
 }
+
 
 void Scene::Save(const std::string &file_name) const {
 	cimg_library::CImg<unsigned char> cimg(
