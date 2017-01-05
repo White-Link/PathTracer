@@ -38,7 +38,7 @@ Vector Scene::LightIntensity(
 		double d = inter_light.Distance();
 		// If an object is between the light and the intersection point,
 		// then the color is dark
-		if (inter_light.IsEmpty() || d*d >= direction_light.NormSquared()) {
+		if (inter_light.IsEmpty() || d*d > direction_light.NormSquared()) {
 			Vector color_light;
 			// Diffuse part
 			double dd = direction_light.NormSquared();
@@ -54,8 +54,7 @@ Vector Scene::LightIntensity(
 					- 2*(direction_light|normal)*normal;
 				direction_light_reflected.Normalize();
 				color_light = color_light + material.FractionSpecular()
-					* pow(std::max(direction_light_reflected|r.Direction(),
-							0.),
+					* pow(std::max(direction_light_reflected|r.Direction(), 0.),
 						material.SpecularCoefficient())
 					* l.Intensity() * specular_color / (PI * dd);
 			}
@@ -154,7 +153,7 @@ Vector Scene::GetTransmissionReflexionColor(
 	} else if (coef_reflection <= 0.001) {
 		final_color = material.TransparentColor() *
 			GetColor(
-				Ray{r(inter.Distance()*1.0001), refracted_direction},
+				Ray{r(inter.Distance()*1.001), refracted_direction},
 				nb_recursions-1, nb_samples, new_index, intensity
 			)
 		;
@@ -171,7 +170,7 @@ Vector Scene::GetTransmissionReflexionColor(
 			} else {
 				final_color = final_color + material.TransparentColor()
 					* GetColor(
-						Ray{r(inter.Distance()*1.0001), refracted_direction},
+						Ray{r(inter.Distance()*1.001), refracted_direction},
 						nb_recursions-1, 1, new_index,
 						(1-coef_reflection)*intensity
 					)
@@ -192,9 +191,8 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	// Check first the intersection with the objects of the scene
 	Intersection inter = objects_->Intersect(r);
 
-	if (inter.IsEmpty() || intensity < 0.01) {
-		// No intersection, or the resulting intensity in the final image is too
-		// low
+	if (inter.IsEmpty()) {
+		// No intersection
 		return Vector{0, 0, 0};
 	}
 
@@ -207,7 +205,7 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 
 	double opacity;
 	double fraction_diffuse_brdf;
-	if (nb_recursions == 0 || nb_samples == 0) {
+	if (nb_recursions == 0 || nb_samples == 0 || intensity < 0.01) {
 		opacity = 1;
 		fraction_diffuse_brdf = 0;
 	} else {
@@ -220,7 +218,7 @@ Vector Scene::GetColor(const Ray &r, unsigned int nb_recursions,
 	if (opacity != 0) {
 		diffuse_color = o.DiffuseColor(intersection_point);
 	}
-	if (material.FractionSpecular() != 0) {
+	if (material.FractionSpecular() != 0 || opacity != 1) {
 		specular_color = o.SpecularColor(intersection_point);
 	}
 

@@ -223,7 +223,7 @@ public:
 	 * in rendered images.
 	 */
 	inline Point operator()(double t) const {
-		return origin_ + (t*0.999999)*direction_;
+		return origin_ + (t*0.9999)*direction_;
 	}
 };
 

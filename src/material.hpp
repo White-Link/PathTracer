@@ -52,7 +52,7 @@ public:
 		double opacity=1,
 		double fraction_diffuse_brdf=0.5,
 		double specular_coefficient=30,
-		double fraction_specular=1,
+		double fraction_specular=0,
 		bool refractive=true,
 		double refractive_index=1
 	) :
